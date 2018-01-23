@@ -1,6 +1,7 @@
 
 ######################################
-# Apache Mesos 설치 (http://mesos.apache.org/)
+# Apache Mesos 설치
+# http://mesos.apache.org/documentation/latest/building/
 # 1.4.1버전 (2018년 01월 23일 현재)
 ######################################
 
@@ -69,6 +70,33 @@ make check
 make install
 
 ##############################
+#Testing Mesos - 테스트 127.0.0.1 --> 0.0.0.0
+##############################
+
+# Change into build directory.
+cd build
+
+# Start Mesos master (ensure work directory exists and has proper permissions).
+./bin/mesos-master.sh --ip=0.0.0.0 --work_dir=/var/lib/mesos
+
+# Start Mesos agent (ensure work directory exists and has proper permissions).
+./bin/mesos-agent.sh --master=0.0.0.0:5050 --work_dir=/var/lib/mesos
+
+# Visit the Mesos web page.
+http://0.0.0.0:5050
+
+# Run C++ framework (exits after successfully running some tasks).
+./src/test-framework --master=0.0.0.0:5050
+
+# Run Java framework (exits after successfully running some tasks).
+./src/examples/java/test-framework 0.0.0.0:5050
+
+# Run Python framework (exits after successfully running some tasks).
+./src/examples/python/test-framework 0.0.0.0:5050
+
+wwwwwwwwwwwwwwwww
+
+##############################
 #Testing Mesos
 ##############################
 
@@ -92,7 +120,6 @@ http://127.0.0.1:5050
 
 # Run Python framework (exits after successfully running some tasks).
 ./src/examples/python/test-framework 127.0.0.1:5050
-
 
 
 
