@@ -15,7 +15,13 @@ Spark Mesos Cluster (O) : biz연산(cpu/mem)은 yarn 보다 2배 이상 빠름.
 
 Spark 2.2.1 (17년 12월 릴리즈)
 
-Mesos 1.0.0 또는 그이상
+Mesos 1.4.1
+
+mesos는 mesosphere로 설치함
+
+
+
+
 
 
 
