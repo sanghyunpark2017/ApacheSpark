@@ -1,5 +1,12 @@
 # ApacheSpark
 
+참조사이트
+
+http://engineering.vcnc.co.kr/2015/05/data-analysis-with-spark/
+
+
+
+
 클러스터 mesos를 사용하기로 함
 
 (http://hoondongkim.blogspot.kr/2015/10/spark-yarn-cluster-vs-spark-mesos.html)
@@ -18,6 +25,8 @@ Spark 2.2.1 (17년 12월 릴리즈)
 Mesos 1.4.1
 
 mesos는 mesosphere로 설치함
+
+
 
 
 
