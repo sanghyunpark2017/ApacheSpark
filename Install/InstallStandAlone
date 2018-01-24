@@ -1,0 +1,28 @@
+
+#서버마다 다운로드 후 압축풀기
+
+yum install -y java
+
+mkdir /app
+cd /app
+
+http://spark.apache.org/downloads.html 
+-> spark-2.2.1-bin-hadoop2.7.tgz
+
+tar xvf spark-2.2.1-bin-hadoop2.7.tgz
+
+#마스터실행
+
+cd /app/spark-2.2.1-bin-hadoop2.7/sbin
+
+./start-master.sh
+
+
+
+
+
+
+
+
+
+
