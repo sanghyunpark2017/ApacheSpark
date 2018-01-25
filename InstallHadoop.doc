@@ -1,0 +1,24 @@
+
+
+t1vbigdata07 (master)
+t1vbigdata08 (node)
+t1vbigdata09 (node)
+t1vbigdata10 (node)
+
+#마스터서버
+ssh-keygen -t rsa -P ""
+cat $HOME/.ssh/id_rsa.pub >> $HOME/.ssh/authorized_keys
+
+모든노드에 마스터서버의 ssh key 복사
+
+
+
+
+
+
+
+
+
+
+
+
