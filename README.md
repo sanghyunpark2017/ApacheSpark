@@ -1,3 +1,47 @@
+
+버전 2018/01/24
+-apache spark 2.2.1
+-mesos 1.0.0 이상이면됨 여기에 추가 패치필요없음
+ spark를 고려한 mesos 설치는 없으니 그냥 설치 할 것
+ 소스만제공하니 가져다가 빌드하고, 바이러리는 mesoshpere를 쓸 것
+ 
+ 
+ 
+ 
+ 
+ 
+ 따위는없음
+ 
+ 
+
+
+
+spark 2.2.1 /w hadoop버전 다운로드
+hdfs는 몇 버전?
+
+sparck 설치 후
+vi conf/spark-env.sh.
+---------------------------------------------------------------------------------------
+### in conf/spark-env.sh ###
+
+# If 'hadoop' binary is on your PATH
+export SPARK_DIST_CLASSPATH=$(hadoop classpath)
+
+# With explicit path to 'hadoop' binary
+export SPARK_DIST_CLASSPATH=$(/path/to/hadoop/bin/hadoop classpath)
+
+# Passing a Hadoop configuration directory
+export SPARK_DIST_CLASSPATH=$(hadoop --config /path/to/configs classpath)
+---------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
 # ApacheSpark
 
 참조사이트
