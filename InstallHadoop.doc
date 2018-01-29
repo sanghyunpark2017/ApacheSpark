@@ -12,10 +12,14 @@ PART1. 싱글마스터
 
 서버구성
 
+
+cat << EOF >> /etc/hosts
 10.10.64.73  t1vbigdata07 #master
 10.10.64.74  t1vbigdata08 #node
 10.10.64.75  t1vbigdata09 #node
 10.10.64.76  t1vbigdata10 #node
+EOF
+
 
 
 #############################
@@ -36,8 +40,7 @@ protoc --version
 #############################
 
 
-#모든서버에 하둡계정 생성
-
+#모든서버에 하둡계정 생성하고 hadoop유저로스위치후 ras키생성
 
 useradd hadoop
 passwd hadoop
@@ -53,9 +56,7 @@ EOF
  
 source ~/.bashrc
 
-
-
-#모든서버에 SSH 생성
+#모든서버에 SSH 생성 
 ssh-keygen -t rsa
 
 
@@ -68,15 +69,14 @@ ssh-copy-id -i /home/hadoop/.ssh/id_rsa.pub hadoop@t1vbigdata09.homeplusnet.co.k
 ssh-copy-id -i /home/hadoop/.ssh/id_rsa.pub hadoop@t1vbigdata10.homeplusnet.co.kr
 
 
-#각 노드로 SSH 접속테스트 (hadoop -> hadoop@remote)
+#master server에서 각 노드로 SSH 접속테스트 (hadoop -> hadoop@remote)
+
+su - hadoop
 
 ssh hadoop@t1vbigdata07.homeplusnet.co.kr
 ssh hadoop@t1vbigdata08.homeplusnet.co.kr
 ssh hadoop@t1vbigdata09.homeplusnet.co.kr
 ssh hadoop@t1vbigdata10.homeplusnet.co.kr
-
-
-
 
 #############################
 ## 하둡다운로드(모든서버)
