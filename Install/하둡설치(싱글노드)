@@ -1,1 +1,179 @@
 
+
+
+systemctl stop firewalld
+systemctl disable firewalld
+
+useradd -d /opt/hadoop hadoop
+passwd hadoop
+
+Donwload 2.9.0 !!!!
+
+sftp -P2189 DCinfra@10.10.38.240
+
+tar xfz hadoop-2.9.0.tar.gz
+cp -rf hadoop-2.9.2/* /opt/hadoop/
+chown -R hadoop:hadoop /opt/hadoop/
+
+su - hadoop
+vi .bash_profile
+------------------------------------------------------------
+## JAVA env variables
+export JAVA_HOME=/opt/jdk1.8.0_131
+export PATH=$PATH:$JAVA_HOME/bin
+export CLASSPATH=.:$JAVA_HOME/jre/lib:$JAVA_HOME/lib:$JAVA_HOME/lib/tools.jar
+## HADOOP env variables
+export HADOOP_HOME=/opt/hadoop
+export HADOOP_COMMON_HOME=$HADOOP_HOME
+export HADOOP_HDFS_HOME=$HADOOP_HOME
+export HADOOP_MAPRED_HOME=$HADOOP_HOME
+export HADOOP_YARN_HOME=$HADOOP_HOME
+export HADOOP_OPTS="-Djava.library.path=$HADOOP_HOME/lib/native"
+export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native
+export PATH=$PATH:$HADOOP_HOME/sbin:$HADOOP_HOME/bin
+------------------------------------------------------------
+
+source .bash_profile
+echo $HADOOP_HOME
+echo $JAVA_HOME
+
+
+ssh-keygen -t rsa
+
+ssh-copy-id localhost
+ssh-copy-id t1vbigdata07.homeplusnet.co.kr
+
+ssh localhost
+ssh t1vbigdata07.homeplusnet.co.kr
+
+
+vi etc/hadoop/core-site.xml
+------------------------------------------------------------
+<configuration>
+  <property>
+  <name>fs.defaultFS</name>
+  <value>hdfs://t1vbigdata07.homeplusnet.co.kr:9000/</value>
+  </property>
+</configuration>
+------------------------------------------------------------
+
+vi etc/hadoop/hdfs-site.xml
+------------------------------------------------------------
+<configuration>
+  <property>
+  <name>dfs.data.dir</name>
+  <value>file:///opt/volume/datanode</value>
+  </property>
+  <property>
+  <name>dfs.name.dir</name>
+  <value>file:///opt/volume/namenode</value>
+  </property>
+</configuration>
+------------------------------------------------------------
+
+
+su root
+mkdir -p /opt/volume/namenode
+mkdir -p /opt/volume/datanode
+chown -R hadoop:hadoop /opt/volume/
+ls -al /opt/
+#Verify permisstions
+
+exit
+#Exit root account to turn back to hadoop user
+
+
+
+vi etc/hadoop/mapred-site.xml
+------------------------------------------------------------
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+<property>
+<name>mapreduce.framework.name</name>
+<value>yarn</value>
+</property>
+</configuration>
+------------------------------------------------------------
+
+
+vi etc/hadoop/yarn-site.xml
+------------------------------------------------------------
+<configuration>
+  <property>
+  <name>yarn.nodemanager.aux-services</name>
+  <value>mapreduce_shuffle</value>
+  </property>
+</configuration>
+------------------------------------------------------------
+
+vi etc/hadoop/hadoop-env.sh
+------------------------------------------------------------
+export JAVA_HOME=/opt/jdk1.8.0_131
+------------------------------------------------------------
+
+
+vi etc/hadoop/slaves
+------------------------------------------------------------
+localhost -> t1vbigdata07.homeplusnet.co.kr
+------------------------------------------------------------
+
+hdfs namenode -format
+
+start-dfs.sh
+start-yarn.sh
+
+
+jps
+xxxx DataNode
+xxxx ResourceManager
+xxxx Jps
+xxxx NodeManager
+xxxx NameNode
+xxxx SecondaryNameNode
+
+
+ss -tul
+ss -tuln
+
+
+hdfs dfs -mkdir /my_storage
+hdfs dfs -put LICENSE.txt /my_storage
+
+
+hdfs dfs -cat /my_storage/LICENSE.txt
+hdfs dfs -ls /my_storage/
+
+hdfs dfs -get /my_storage/ ./
+
+
+
+http://t1vbigdata07.homeplusnet.co.kr:50070 
+
+http://t1vbigdata07.homeplusnet.co.kr:50070/explorer.html
+
+
+http://t1vbigdata07.homeplusnet.co.kr:8088/cluster
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
