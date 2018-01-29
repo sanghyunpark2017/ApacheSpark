@@ -2,32 +2,41 @@
 
 
 
-
+###########################################
 Step 1. Install Java
+###########################################
 
-
+###########################################
 Step 2. Create User Account
+###########################################
 
 useradd hadoop
 passwd hadoop
 
+###########################################
 Step 3: Add FQDN Mapping
+###########################################
 
 vi /etc/hosts
 
+###########################################
 Step 4. Configuring SSH key pair login
-
+###########################################
 su - hadoop
 ssh-keygen -t rsa
 ssh-copy-id -i ~/.ssh/id_rsa.pub hadoop@t1vbigdata07.homeplusnet.co.kr
 ssh-copy-id -i ~/.ssh/id_rsa.pub hadoop@t1vbigdata08.homeplusnet.co.kr
 ssh-copy-id -i ~/.ssh/id_rsa.pub hadoop@t1vbigdata09.homeplusnet.co.kr
 chmod 0600 ~/.ssh/authorized_keys
+
+ssh t1vbigdata07.homeplusnet.co.kr
+ssh localhost
+
 exit
 
-
+###########################################
 Step 5. Download and Extract Hadoop Source
-
+###########################################
 
 ##MASTER
 su - root
@@ -48,7 +57,9 @@ su - root
 mkdir -p /opt/hadoop
 chown -R hadoop:hadoop /opt/hadoop
 
+###########################################
 Step 6. Setup Environment Variables
+###########################################
 
 ##All Servers
 
@@ -81,7 +92,9 @@ export JAVA_HOME=/opt/jdk1.8.0_131
 export HADOOP_OPTS=-Djava.net.preferIPv4Stack=true
 -------------------------------------------------------------------------------------------
 
+###########################################
 Step 7: Configure Hadoop
+###########################################
 
 cd $HADOOP_HOME/etc/hadoop
 
@@ -133,14 +146,18 @@ vi mapred-site.xml
 </configuration>
 -------------------------------------------------------------------------------------------
 
+###########################################
 Step 8: Copy Hadoop folder to Slave Servers
+###########################################
 
 su - hadoop
 rsync -auvx $HADOOP_HOME t1vbigdata08.homeplusnet.co.kr:/opt
 rsync -auvx $HADOOP_HOME t1vbigdata09.homeplusnet.co.kr:/opt
 
 
+###########################################
 Step 9: Configure Hadoop on namenode Server Only
+###########################################
 
 su - hadoop
 cd $HADOOP_HOME/etc/hadoop
@@ -153,11 +170,13 @@ t1vbigdata09.homeplusnet.co.kr
 su - hadoop
 hadoop namenode -format
 
-
+###########################################
 Step 10: Configure Hadoop on datanode server Only
 #On each datanodes, you may want to specify each node data directory, 
 data nodes can have multiple data directories dfs.data.dir
 #On each datanode, edit hdfs-site.xml, change dfs.data.dir value accordingly
+###########################################
+
 
 필요시 추가!!
 vi /opt/hadoop/etc/hadoop/hdfs-site.xml
@@ -169,14 +188,19 @@ vi /opt/hadoop/etc/hadoop/hdfs-site.xml
   </property>
 -------------------------------------------------------------------------------------------
 
+
+###########################################
 Step 11: Start Hadoop Services
 (Use the following command to start all hadoop services on hadoop namenode and datanodes)
+###########################################
 
 su - hadoop
 start-dfs.sh
 
+###########################################
 Step 12. Test Hadoop cluster(Multiple Nodes) Setup
 (On namenode, make the HDFS directories required using following commands.)
+###########################################
 
 hdfs dfs -mkdir /user
 hdfs dfs -mkdir /user/hadoop
