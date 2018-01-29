@@ -31,16 +31,19 @@ Step 5. Download and Extract Hadoop Source
 su - root
 mkdir -p /opt/hadoop
 chown hadoop:hadoop /opt/hadoop
-su - hadoop
-cd /opt/hadoop
 
-wget http://www-us.apache.org/dist/hadoop/common/hadoop-2.9.0/hadoop-2.9.0.tar.gz
+DOWNLOAD 2.9.0!!!!
 
-tar xzf hadoop-2.9.0.tar.gz
+tar xfz hadoop-2. 9.0.tar.gz
+cp -rf hadoop-2.9.0/* /opt/hadoop/
+
+rm -rf  /root/hadoop-2.9.0
+rm /root/hadoop-2.9.0.tzr.gz
+
 
 Step 6. Setup Environment Variables
 
-
+su - hadoop
 vi ~/.bashrc
 -------------------------------------------------------------------------------------------
 ## JAVA env variables
