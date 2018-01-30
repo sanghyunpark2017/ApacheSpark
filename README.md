@@ -1,6 +1,7 @@
 
 ###### Apache Spark #####
 -Spark+Yarn  : 대량처리 > 로직, mapr코딩, hive(sql-2-mapr)
+
 -Spark+Mesos : 로직 > 대량처리, 메모리기반 mapr, scala/JAVA/interactive shell
 
 
