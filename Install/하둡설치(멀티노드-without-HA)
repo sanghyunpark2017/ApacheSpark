@@ -1,4 +1,5 @@
 
+
 ##############################################
 하둡설치 / 멀티노드 / without HA
 ##############################################
@@ -7,23 +8,31 @@
 
 su - root
 
-cat << EOF >> /etc/hosts
-10.10.64.73 master
-10.10.64.74 slave1
-10.10.64.75 slave2
-10.10.64.76 slave3
-EOF
+
+/etc/hosts -> PASS
+
+호스트이름 FQDN으로 설정!!
+
+
+
+
+
 
 useradd hadoop
 passwd hadoop
 
+
 su - hadoop
-ssh-keygen -t rsa
-
-
 cat << EOF >> /home/hadoop/.bashrc
 export LS_COLORS="di=00;36:fi=00;37"
 EOF
+
+
+ssh-keygen -t rsa
+
+
+~~~~~~~~~~~~~~~~~~~~~~
+
 
 exit to root
 
@@ -40,41 +49,41 @@ systemctl status firewalld
 #ssh(master only)
 
 su - hadoop
+ls -al
 
-ssh-copy-id -i ~/.ssh/id_rsa.pub hadoop@master
-ssh-copy-id -i ~/.ssh/id_rsa.pub hadoop@slave1
-ssh-copy-id -i ~/.ssh/id_rsa.pub hadoop@slave2
-ssh-copy-id -i ~/.ssh/id_rsa.pub hadoop@slave3
 
-chmod 0600 ~/.ssh/authorized_keys
-exit
+ssh-copy-id -i ~/.ssh/id_rsa.pub hadoop@t1vbigdata07.homeplusnet.co.kr
+ssh-copy-id -i ~/.ssh/id_rsa.pub hadoop@t1vbigdata08.homeplusnet.co.kr
+ssh-copy-id -i ~/.ssh/id_rsa.pub hadoop@t1vbigdata09.homeplusnet.co.kr
+ssh-copy-id -i ~/.ssh/id_rsa.pub hadoop@t1vbigdata10.homeplusnet.co.kr
+ssh-copy-id -i ~/.ssh/id_rsa.pub hadoop@localhost
+ssh-copy-id -i ~/.ssh/id_rsa.pub hadoop@0.0.0.0
 
 ssh localhost
-ssh master
-ssh slave1
-ssh slave2
-ssh slav3
+ssh t1vbigdata07.homeplusnet.co.kr
+ssh t1vbigdata08.homeplusnet.co.kr
+ssh t1vbigdata09.homeplusnet.co.kr
+ssh t1vbigdata10.homeplusnet.co.kr
 
 
 #mater + all slaves
 
-exit to root
+exit # to root
 
-
-sftp -P2189 DCinfra@10.10.38.240
+cd ~
+sftp -P2189 *****@x.x.x.x
 cd /uploads/Users/shpark/bigdata/hadoop
 get  hadoop-2.9.0.tar.gz
-
 exit
 
-tar xzf hadoop-2.9.0.tar.gz
 
+tar xzf hadoop-2.9.0.tar.gz
 cp -rf hadoop-2.9.0/* /opt/hadoop/
 chown -R hadoop:hadoop /opt/hadoop/
 
+
+
 su - hadoop
-
-
 vi ~/.bashrc
 -------------------------------------------------------------------------------------------
 ## JAVA env variables
@@ -116,7 +125,7 @@ vi /opt/hadoop/etc/hadoop/core-site.xml
 <configuration>
   <property>
     <name>fs.default.name</name>
-    <value>hdfs://master:9000/</value>
+    <value>hdfs://t1vbigdata07.homeplusnet.co.kr:9000/</value>
   </property>
 </configuration>
 -------------------------------------------------------------------------------------------
@@ -197,15 +206,15 @@ vi /opt/hadoop/etc/hadoop/yarn-site.xml
   </property>
   <property>
     <name>yarn.resourcemanager.resource-tracker.address</name>
-    <value>master:8025</value>
+    <value>t1vbigdata07.homeplusnet.co.kr:8025</value>
   </property>
   <property>
     <name>yarn.resourmanager.scheduler.address</name>
-    <value>master:8030</value>
+    <value>t1vbigdata07.homeplusnet.co.kr:8030</value>
   </property>
   <property>
     <name>yarn.resourcemanager.address</name>
-    <value>master:8050</value>
+    <value>t1vbigdata07.homeplusnet.co.kr:8050</value>
   </property>
 </configuration>
 -------------------------------------------------------------------------------------------
@@ -226,7 +235,7 @@ vi /opt/hadoop/etc/hadoop/mapred-site.xml
   </property>
   <property>
     <name>mapreduce.jobhistory.address</name>
-    <value>master:10020</value>
+    <value>t1vbigdata07.homeplusnet.co.kr:10020</value>
   </property>
 </configuration>
 -------------------------------------------------------------------------------------------
@@ -241,7 +250,7 @@ slaves 파일에는 기존 localhost를 삭제하고 slave 호스트만
 
 vi /opt/hadoop/etc/hadoop/mastersping
 -------------------------------------------------------------------------------------------
-master
+t1vbigdata07.homeplusnet.co.kr
 -------------------------------------------------------------------------------------------
 cat /opt/hadoop/etc/hadoop/masters
 
@@ -249,8 +258,9 @@ cat /opt/hadoop/etc/hadoop/masters
 
 vi /opt/hadoop/etc/hadoop/slaves
 -------------------------------------------------------------------------------------------
-slave1
-slave2
+t1vbigdata08.homeplusnet.co.kr
+t1vbigdata09.homeplusnet.co.kr
+t1vbigdata10.homeplusnet.co.kr
 -------------------------------------------------------------------------------------------
 cat /opt/hadoop/etc/hadoop/slaves
 
@@ -268,7 +278,11 @@ hdfs namenode -format
 start-dfs.sh
 
 
+jps
+
+
 start-yarn.sh
+jps
 
 
 #master> jps
@@ -280,19 +294,23 @@ datanode, nodemanager
 
 #review
 
-http://10.10.64.73:8088/cluster/nodes
-http:/10.10.64.73:50070
-http:/10.10.64.73:50070/explorer.html
+http://t1vbigdata07.homeplusnet.co.kr:8088
+http:/t1vbigdata07.homeplusnet.co.kr:50070
+http:/t1vbigdata07.homeplusnet.co.kr:50070/explorer.html
 
 
-
+cd ~
+echo "Welcome to Hadoop" > Readme.txt
 
 
 hdfs dfs -mkdir /user
 hdfs dfs -mkdir /user/hadoop
+hdfs dfs -put /home/hadoop/Readme.txt /user/hadoop
+
 
 #Now copy all files from local file system /home/hadoop/etc/hadoop/hadoop-env.sh to hadoop distributed file system using below command
 
 hdfs dfs -put /home/hadoop/hadoop-2.9.0.tar /user/hadoop
+
 
 
