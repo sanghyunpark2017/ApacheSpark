@@ -1,31 +1,4 @@
 
-#서버마다 다운로드 후 압축풀기
-
-yum install -y java
-
-mkdir /app
-cd /app
-
-http://spark.apache.org/downloads.html 
--> spark-2.2.1-bin-hadoop2.7.tgz
-
-tar xvf spark-2.2.1-bin-hadoop2.7.tgz
-
-#마스터로 실행
-cd /app/spark-2.2.1-bin-hadoop2.7/sbin
-./start-master.sh
-
-http://localhost:8080
--> Spark Master at "spark://*****:7077" 확인
-
-#슬레이브(=worker) 실행
-
-./start-slave.sh  spark://HOSTNAME:7077
-
-
-
-
-
 
 
 
