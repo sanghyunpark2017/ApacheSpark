@@ -1,69 +1,80 @@
 
+##############################################
+하둡설치 / 멀티노드 / without HA
+##############################################
 
+#사전작업(master + all slaves)
 
+su - root
 
-###########################################
-Step 1. Install Java
-###########################################
-
-###########################################
-Step 2. Create User Account
-###########################################
+cat << EOF >> /etc/hosts
+10.10.64.73 master
+10.10.64.74 slave1
+10.10.64.75 slave2
+10.10.64.76 slave3
+EOF
 
 useradd hadoop
 passwd hadoop
 
-###########################################
-Step 3: Add FQDN Mapping
-###########################################
-
-vi /etc/hosts
-
-###########################################
-Step 4. Configuring SSH key pair login
-###########################################
 su - hadoop
 ssh-keygen -t rsa
-ssh-copy-id -i ~/.ssh/id_rsa.pub hadoop@t1vbigdata07.homeplusnet.co.kr
-ssh-copy-id -i ~/.ssh/id_rsa.pub hadoop@t1vbigdata08.homeplusnet.co.kr
-ssh-copy-id -i ~/.ssh/id_rsa.pub hadoop@t1vbigdata09.homeplusnet.co.kr
-chmod 0600 ~/.ssh/authorized_keys
 
-ssh t1vbigdata07.homeplusnet.co.kr
+
+cat << EOF >> /home/hadoop/.bashrc
+export LS_COLORS="di=00;36:fi=00;37"
+EOF
+
+exit to root
+
+
+mkdir -p /opt/hadoop
+chown hadoop:hadoop /opt/hadoop
+
+
+systemctl disable firewalld
+systemctl stop firewalld
+systemctl status firewalld
+
+
+#ssh(master only)
+
+su - hadoop
+
+ssh-copy-id -i ~/.ssh/id_rsa.pub hadoop@master
+ssh-copy-id -i ~/.ssh/id_rsa.pub hadoop@slave1
+ssh-copy-id -i ~/.ssh/id_rsa.pub hadoop@slave2
+ssh-copy-id -i ~/.ssh/id_rsa.pub hadoop@slave3
+
+chmod 0600 ~/.ssh/authorized_keys
+exit
+
 ssh localhost
+ssh master
+ssh slave1
+ssh slave2
+ssh slav3
+
+
+#mater + all slaves
+
+exit to root
+
+
+sftp -P2189 DCinfra@10.10.38.240
+cd /uploads/Users/shpark/bigdata/hadoop
+get  hadoop-2.9.0.tar.gz
 
 exit
 
-###########################################
-Step 5. Download and Extract Hadoop Source
-###########################################
+tar xzf hadoop-2.9.0.tar.gz
 
-##MASTER
-su - root
-mkdir -p /opt/hadoop
-
-DOWNLOAD 2.9.0!!!!
-
-tar xfz hadoop-2. 9.0.tar.gz
 cp -rf hadoop-2.9.0/* /opt/hadoop/
-
-chown -R hadoop:hadoop /opt/hadoop
-
-rm -rf  /root/hadoop-2.9.0
-rm /root/hadoop-2.9.0.tzr.gz
-
-###All Other Nodes
-su - root
-mkdir -p /opt/hadoop
-chown -R hadoop:hadoop /opt/hadoop
-
-###########################################
-Step 6. Setup Environment Variables
-###########################################
-
-##All Servers
+chown -R hadoop:hadoop /opt/hadoop/
 
 su - hadoop
+
+
 vi ~/.bashrc
 -------------------------------------------------------------------------------------------
 ## JAVA env variables
@@ -78,129 +89,204 @@ export HADOOP_COMMON_HOME=$HADOOP_HOME
 export HADOOP_HDFS_HOME=$HADOOP_HOME
 export YARN_HOME=$HADOOP_HOME
 export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native
+export HADOOP_OPTS="-Djava.library.path=$HADOOP_HOME/lib"
 export PATH=$PATH:$HADOOP_HOME/sbin:$HADOOP_HOME/bin
 -------------------------------------------------------------------------------------------
 
 source ~/.bashrc
 
-##여기부터는MASTER노드만
-
 
 vi $HADOOP_HOME/etc/hadoop/hadoop-env.sh
 -------------------------------------------------------------------------------------------
 export JAVA_HOME=/opt/jdk1.8.0_131
-export HADOOP_OPTS=-Djava.net.preferIPv4Stack=true
+export HADOOP_OPTS="-Djava.library.path=$HADOOP_HOME/lib"
 -------------------------------------------------------------------------------------------
 
-###########################################
-Step 7: Configure Hadoop
-###########################################
 
-cd $HADOOP_HOME/etc/hadoop
 
-vi core-site.xml
+
+cd /opt/hadoop/etc/hadoop
+ls
+
+
+#master + all slave nodes
+
+vi /opt/hadoop/etc/hadoop/core-site.xml
 -------------------------------------------------------------------------------------------
 <configuration>
   <property>
     <name>fs.default.name</name>
-    <value>hdfs://t1vbigdata07.homeplusnet.co.kr:9000/</value>
-  </property>
-  <property>
-    <name>dfs.permissions</name>
-    <value>false</value>
+    <value>hdfs://master:9000/</value>
   </property>
 </configuration>
 -------------------------------------------------------------------------------------------
+cat /opt/hadoop/etc/hadoop/core-site.xml
 
 
+#updatre hdfs-site.xml
+-마스터와 슬레이드 따로 따로 설정
+-replication은 data노드 숫자만큼 설정
 
-vi hdfs-site.xml
+
+#master only
+
+vi /opt/hadoop/etc/hadoop/hdfs-site.xml
 -------------------------------------------------------------------------------------------
 <configuration>
   <property>
-    <name>dfs.data.dir</name>
-    <value>/opt/hadoop/dfs/name/data</value>
-    <final>true</final>
+    <name>dfs.replication</name>
+    <value>3</value>
   </property>
   <property>
     <name>dfs.name.dir</name>
-    <value>/opt/hadoop/dfs/name</value>
-    <final>true</final>
-  </property>
-  <property>
-    <name>dfs.replication</name>
-    <value>1</value>
+    <value>file:/opt/hadoop/hdfs/namenode</value>
   </property>
 </configuration>
 -------------------------------------------------------------------------------------------
+cat /opt/hadoop/etc/hadoop/hdfs-site.xml
 
 
-cp mapred-site.xml.template  mapred-site.xml
-vi mapred-site.xml
+#recreate namenode (hadoop@master only)
+mkdir -p /opt/hadoop/hdfs/namenode
+chown hadoop:hadoop -R /opt/hadoop/hdfs/namenode/
+chmod 777 /opt/hadoop/hdfs/namenode
+cd /opt/hadoop
+ll
+
+#all slave nodes
+
+
+vi /opt/hadoop/etc/hadoop/hdfs-site.xml
 -------------------------------------------------------------------------------------------
 <configuration>
   <property>
-    <name>mapred.job.tracker</name>
-    <value>t1vbigdata07.homeplusnet.co.kr:9001</value>
+    <name>dfs.replication</name>
+    <value>3</value>
+  </property>
+  <property>
+    <name>dfs.data.dir</name>
+    <value>file:/opt/hadoop/hdfs/datanode</value>
   </property>
 </configuration>
 -------------------------------------------------------------------------------------------
-
-###########################################
-Step 8: Copy Hadoop folder to Slave Servers
-###########################################
-
-su - hadoop
-rsync -auvx $HADOOP_HOME t1vbigdata08.homeplusnet.co.kr:/opt
-rsync -auvx $HADOOP_HOME t1vbigdata09.homeplusnet.co.kr:/opt
+cat /opt/hadoop/etc/hadoop/hdfs-site.xml
 
 
-###########################################
-Step 9: Configure Hadoop on namenode Server Only
-###########################################
+#recreate namenode (hadoop@slaves only)
+mkdir -p /opt/hadoop/hdfs/datanode
+chown hadoop:hadoop -R /opt/hadoop/hdfs/datanode/
+chmod 777 /opt/hadoop/hdfs/datanode
+cd /opt/hadoop
+ll
 
-su - hadoop
-cd $HADOOP_HOME/etc/hadoop
-vi slaves
-t1vbigdata08.homeplusnet.co.kr
-t1vbigdata09.homeplusnet.co.kr
-
-##Format Name Node on Hadoop Master only
-
-su - hadoop
-hadoop namenode -format
-
-###########################################
-Step 10: Configure Hadoop on datanode server Only
-#On each datanodes, you may want to specify each node data directory, 
-data nodes can have multiple data directories dfs.data.dir
-#On each datanode, edit hdfs-site.xml, change dfs.data.dir value accordingly
-###########################################
+ 
+#update yarn-site.xml (master + all slaves)
+mapred-site.xml에서 yarn을 선택하여 셔틀 서비스를 지정한다.
 
 
-필요시 추가!!
-vi /opt/hadoop/etc/hadoop/hdfs-site.xml
+vi /opt/hadoop/etc/hadoop/yarn-site.xml
 -------------------------------------------------------------------------------------------
+<configuration>
   <property>
-    <name>dfs.data.dir</name>
-    <value>/opt/hadoop/dfs/name/data</value>
-    <final>true</final>
+    <name>yarn.nodemanager.aux-services</name>
+    <value>mapreduce_shuffle</value>
   </property>
+  <property>
+    <name>yarn.nodemanager.aux-services.mapreduce.shuffle.class</name>
+    <value>org.apache.hadoop.mapred.ShuffleHandler</value>
+  </property>
+  <property>
+    <name>yarn.resourcemanager.resource-tracker.address</name>
+    <value>master:8025</value>
+  </property>
+  <property>
+    <name>yarn.resourmanager.scheduler.address</name>
+    <value>master:8030</value>
+  </property>
+  <property>
+    <name>yarn.resourcemanager.address</name>
+    <value>master:8050</value>
+  </property>
+</configuration>
 -------------------------------------------------------------------------------------------
+cat /opt/hadoop/etc/hadoop/yarn-site.xml
 
 
-###########################################
-Step 11: Start Hadoop Services
-(Use the following command to start all hadoop services on hadoop namenode and datanodes)
-###########################################
 
-su - hadoop
+#update mapred-site.xml (master + all slaves)
+localhost:10020 => master:10020
+
+cp /opt/hadoop/etc/hadoop/mapred-site.xml.template /opt/hadoop/etc/hadoop/mapred-site.xml
+vi /opt/hadoop/etc/hadoop/mapred-site.xml 
+-------------------------------------------------------------------------------------------
+<configuration>
+  <property>
+    <name>mapreduce.framework.name</name>
+    <value>yarn</value>
+  </property>
+  <property>
+    <name>mapreduce.jobhistory.address</name>
+    <value>master:10020</value>
+  </property>
+</configuration>
+-------------------------------------------------------------------------------------------
+cat /opt/hadoop/etc/hadoop/mapred-site.xml
+
+
+
+#update masters and slaves file (master node only)
+master 파일에는 마스터 서버만
+slaves 파일에는 기존 localhost를 삭제하고 slave 호스트만
+
+
+vi /opt/hadoop/etc/hadoop/mastersping
+-------------------------------------------------------------------------------------------
+master
+-------------------------------------------------------------------------------------------
+cat /opt/hadoop/etc/hadoop/masters
+
+
+
+vi /opt/hadoop/etc/hadoop/slaves
+-------------------------------------------------------------------------------------------
+slave1
+slave2
+-------------------------------------------------------------------------------------------
+cat /opt/hadoop/etc/hadoop/slaves
+
+
+
+#format the name node(master only)
+
+cd /opt/hadoop
+
+hdfs namenode -format
+
+#start the DFS & Yarn (master only)
+
+
 start-dfs.sh
 
-###########################################
-Step 12. Test Hadoop cluster(Multiple Nodes) Setup
-(On namenode, make the HDFS directories required using following commands.)
-###########################################
+
+start-yarn.sh
+
+
+#master> jps
+namenode, secocdarynamenode, resourcemanager
+
+#slaves> jps
+datanode, nodemanager
+
+
+#review
+
+http://10.10.64.73:8088/cluster/nodes
+http:/10.10.64.73:50070
+http:/10.10.64.73:50070/explorer.html
+
+
+
+
 
 hdfs dfs -mkdir /user
 hdfs dfs -mkdir /user/hadoop
