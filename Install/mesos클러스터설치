@@ -1,1 +1,176 @@
 
+
+
+
+
+
+
+https://github.com/mesosphere/open-docs/blob/master/getting-started/install.md
+
+
+
+##########################################
+##########################################
+#Install Master Node
+##########################################
+##########################################
+
+systemctl disable firewalld
+systemctl stop firewalld
+
+
+rpm -Uvh http://repos.mesosphere.com/el/7/noarch/RPMS/mesosphere-el-repo-7-1.noarch.rpm
+
+rpm -Uvh http://repos.mesosphere.io/el/7/noarch/RPMS/mesosphere-el-repo-7-1.noarch.rpm  
+
+
+sudo yum -y install mesos marathon
+sudo yum -y install mesosphere-zookeeper
+
+
+
+######################################
+#Config Zookeeper (Master 3EA only)
+######################################
+
+
+#change zookeeper id
+
+cat << EOF >  /var/lib/zookeeper/myid 
+1
+EOF
+
+
+cat << EOF >  /var/lib/zookeeper/myid 
+2
+EOF
+
+
+cat << EOF >  /var/lib/zookeeper/myid 
+3
+EOF
+
+
+
+
+#specify zookeer master 3 nodes
+cat << EOF >> /etc/zookeeper/conf/zoo.cfg
+server.1=10.10.64.77:2888:3888
+server.2=10.10.64.78:2888:3888
+server.3=10.10.64.79:2888:3888
+EOF
+clear
+cat  /etc/zookeeper/conf/zoo.cfg
+
+
+
+######################################
+#Config Mesos (Master 3EA only)
+######################################
+
+#specify zookeeper nodes
+
+cat << EOF >  /etc/mesos/zk
+zk://10.10.64.77:2181,10.10.64.78:2181,10.10.64.79:2181/mesos
+EOF
+
+
+#quorm set 2
+
+cat << EOF >  /etc/mesos-master/quorum
+2
+EOF
+
+
+#Disable mesos-slave service
+
+systemctl disable mesos-slave
+
+
+######################################
+#Config Marathon (Master 3EA only)
+######################################
+
+cd /etc/default
+bk marathon
+
+cat << EOF > /etc/default/marathon
+MARATHON_MASTER=zk://10.10.64.77:2181,10.10.64.78:2181,10.10.64.79:2181/mesos
+MARATHON_ZK=zk://10.10.64.77:2181,10.10.64.78:2181,10.10.64.79:2181/marathon
+EOF
+
+
+
+######################################
+#Start Services zookeeper->mesos->marathon
+######################################
+
+
+systemctl start zookeeper
+systemctl start mesos-master
+systemctl start marathon
+
+
+systemctl status zookeeper
+systemctl status mesos-master
+systemctl status marathon
+
+
+systemctl restart mesos-master
+systemctl status mesos-master
+
+
+
+
+######################################
+#verify
+######################################
+
+
+#zookeeper
+http://t1vbigdata11.homeplusnet.co.kr:5050
+http://t1vbigdata12.homeplusnet.co.kr:5050
+http://t1vbigdata13.homeplusnet.co.kr:5050
+
+OR
+
+MASTER=$(mesos-resolve `cat /etc/mesos/zk`)
+mesos-execute --master=$MASTER --name="cluster-test" --command="sleep 5"
+
+#marathon
+http://t1vbigdata11.homeplusnet.co.kr:8080
+http://t1vbigdata12.homeplusnet.co.kr:8080
+http://t1vbigdata13.homeplusnet.co.kr:8080
+
+
+
+##########################################
+##########################################
+#Install Slave Nodes
+##########################################
+##########################################
+
+systemctl disable firewalld
+systemctl stop firewalld
+
+
+#rpm -Uvh http://repos.mesosphere.com/el/7/noarch/RPMS/mesosphere-el-repo-7-1.noarch.rpm
+rpm -Uvh http://repos.mesosphere.io/el/7/noarch/RPMS/mesosphere-el-repo-7-1.noarch.rpm  
+
+
+yum -y install mesos 
+
+systemctl disable mesos-master.service
+
+
+cat << EOF >  /etc/mesos/zk
+zk://10.10.64.77:2181,10.10.64.78:2181,10.10.64.79:2181/mesos
+EOF
+
+
+systemctl start  mesos-slave 
+
+systemctl status mesos-slave
+
+
+
