@@ -1,3 +1,101 @@
 
 http://ourcstory.tistory.com/166?category=630696
 
+
+
+
+
+
+mesos를 사용한다고 해서 빌트인 하둡이 필요할듯? HDFS
+
+
+
+
+
+#사전설치
+java, Python, R, Scala
+
+
+
+
+
+systemctl disable firewalld
+systemctl stop firewalld
+systemctl status firewalld
+
+ 
+
+ssh-copy-id -i ~/.ssh/id_rsa.pub root@t1vbigdata11.homeplusnet.co.kr
+ssh-copy-id -i ~/.ssh/id_rsa.pub root@localhost
+ssh-copy-id -i ~/.ssh/id_rsa.pub root@0.0.0.0
+
+
+ssh t1vbigdata11.homeplusnet.co.kr
+ssh localhost
+
+
+vi ~/.bashrc
+
+export JAVA_HOME=/opt/jdk1.8.0_131
+export SPARK_HOME=/root/spark-2.2.1-bin-hadoop2.7
+export PATH=$SPARK_HOME/bin:$PATH
+
+
+spark-shell 
+
+scala>
+
+
+
+
+
+http://10.10.64.77:4040
+
+
+
+
+cd $SPARK_HOME
+
+spark-shell
+
+val textFile = sc.textFile("README.md")
+
+textFile.count()
+textFile.first()
+
+
+#MapReduce  대표 예제 : 가장 많은 단어를 포함한 줄의 단어 개수
+textFile.map(line => line.split(" ").size).reduce((a,b) => if(a > b) a else b)
+
+
+#scala 이용 시 예제
+val wordCounts = textFile.flatMap(line => line.split(" ")).map(word => (word,1)).reduceByKey((a,b) => a + b)
+wordCounts.collect()
+
+
+#Caching
+val linesWithSpark = textFile.filter(line => line.contains("Spark"))
+linesWithSpark.cache()
+linesWithSpark.count()
+
+linesWithSpark.count()
+
+
+#Self-Contained Applications
+scals는 sbt사용, java는 maven  사용
+
+
+#SBT설치방법
+
+yum install sbt
+
+
+
+
+
+ 
+
+
+
+
+
