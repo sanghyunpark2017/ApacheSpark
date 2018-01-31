@@ -76,6 +76,10 @@ EOF
 
 
 #quorm set 2
+-마스터서버가 3대이면 쿼럼은 2
+-LD_LIBRARY_PATH 를 지정해줘야 실행시 오류가 발생하지 않는다고 하는데 추후 확인이 필요함
+
+
 
 cat << EOF >  /etc/mesos-master/quorum
 2
