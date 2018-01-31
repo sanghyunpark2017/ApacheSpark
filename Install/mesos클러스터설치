@@ -115,27 +115,18 @@ systemctl status zookeeper
 systemctl status mesos-master
 systemctl status marathon
 
-
-systemctl restart mesos-master
-systemctl status mesos-master
-
-
-
-
 ######################################
 #verify
 ######################################
 
+#zookeeper 마스터서버 찾기
+MASTER=$(mesos-resolve `cat /etc/mesos/zk`)
+mesos-execute --master=$MASTER --name="cluster-test" --command="sleep 5"
 
 #zookeeper
 http://t1vbigdata11.homeplusnet.co.kr:5050
 http://t1vbigdata12.homeplusnet.co.kr:5050
 http://t1vbigdata13.homeplusnet.co.kr:5050
-
-OR
-
-MASTER=$(mesos-resolve `cat /etc/mesos/zk`)
-mesos-execute --master=$MASTER --name="cluster-test" --command="sleep 5"
 
 #marathon
 http://t1vbigdata11.homeplusnet.co.kr:8080
@@ -156,7 +147,6 @@ systemctl stop firewalld
 
 #rpm -Uvh http://repos.mesosphere.com/el/7/noarch/RPMS/mesosphere-el-repo-7-1.noarch.rpm
 rpm -Uvh http://repos.mesosphere.io/el/7/noarch/RPMS/mesosphere-el-repo-7-1.noarch.rpm  
-
 
 yum -y install mesos 
 
