@@ -168,3 +168,18 @@ systemctl status mesos-slave
 
 
 
+################################
+샘플 job 테스트
+################################
+
+MASTER=$(mesos-resolve `cat /etc/mesos/zk`)
+mesos-execute --master=$MASTER --name="t1vbigdata11.homeplusnet.co.kr" --command="sleep 5"
+
+http://t1vbigdata11.homeplusnet.co.kr:5050
+
+
+
+
+
+
+
