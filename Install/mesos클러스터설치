@@ -2,6 +2,34 @@
 
 
 
+cat << EOF >> /etc/hosts
+10.10.64.67 t1vbigdata01 t1vbigdata01.homeplusnet.co.kr
+10.10.64.68 t1vbigdata02 t1vbigdata02.homeplusnet.co.kr
+10.10.64.69 t1vbigdata03 t1vbigdata03.homeplusnet.co.kr
+10.10.64.70 t1vbigdata04 t1vbigdata04.homeplusnet.co.kr
+10.10.64.71 t1vbigdata05 t1vbigdata05.homeplusnet.co.kr
+10.10.64.72 t1vbigdata06 t1vbigdata06.homeplusnet.co.kr
+10.10.64.73 t1vbigdata07 t1vbigdata07.homeplusnet.co.kr
+10.10.64.74 t1vbigdata08 t1vbigdata08.homeplusnet.co.kr
+10.10.64.75 t1vbigdata09 t1vbigdata09.homeplusnet.co.kr
+10.10.64.76 t1vbigdata10 t1vbigdata10.homeplusnet.co.kr
+10.10.64.77 t1vbigdata11 t1vbigdata11.homeplusnet.co.kr
+10.10.64.78 t1vbigdata12 t1vbigdata12.homeplusnet.co.kr
+10.10.64.79 t1vbigdata13 t1vbigdata13.homeplusnet.co.kr
+10.10.64.80 t1vbigdata14 t1vbigdata14.homeplusnet.co.kr
+10.10.64.81 t1vbigdata15 t1vbigdata15.homeplusnet.co.kr
+10.10.64.82 t1vbigdata16 t1vbigdata16.homeplusnet.co.kr
+10.10.64.83 t1vbigdata17 t1vbigdata17.homeplusnet.co.kr
+10.10.64.84 t1vbigdata18 t1vbigdata18.homeplusnet.co.kr
+10.10.64.85 t1vbigdata19 t1vbigdata19.homeplusnet.co.kr
+10.10.64.86 t1vbigdata20 t1vbigdata20.homeplusnet.co.kr
+10.10.64.87 t1vbigdata21 t1vbigdata21.homeplusnet.co.kr
+10.10.64.88 t1vbigdata22 t1vbigdata22.homeplusnet.co.kr
+EOF
+
+
+
+
 
 
 
@@ -63,7 +91,6 @@ clear
 cat  /etc/zookeeper/conf/zoo.cfg
 
 
-
 ######################################
 #Config Mesos (Master 3EA only)
 ######################################
@@ -73,6 +100,7 @@ cat  /etc/zookeeper/conf/zoo.cfg
 cat << EOF >  /etc/mesos/zk
 zk://10.10.64.77:2181,10.10.64.78:2181,10.10.64.79:2181/mesos
 EOF
+
 
 
 #quorm set 2
@@ -102,7 +130,6 @@ cat << EOF > /etc/default/marathon
 MARATHON_MASTER=zk://10.10.64.77:2181,10.10.64.78:2181,10.10.64.79:2181/mesos
 MARATHON_ZK=zk://10.10.64.77:2181,10.10.64.78:2181,10.10.64.79:2181/marathon
 EOF
-
 
 
 ######################################
