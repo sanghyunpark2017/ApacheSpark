@@ -101,14 +101,19 @@ echo "t1vbigdata13.homeplusnet.co.kr" > /etc/marathon/conf/hostname
 systemctl stop mesos-slave.service
 systemctl disable mesos-slave.service
 
-systemctl restart mesos-master  
-
-systemctl restart marathon  
-
+systemctl start mesos-master  
 
 systemctl status zookeeper
 systemctl status mesos-master
-systemctl status marathon
+
+#mesos  마스터 각각 접속 테스트
+http://t1vbigdata11.homeplusnet.co.kr:5050
+http://t1vbigdata12.homeplusnet.co.kr:5050
+http://t1vbigdata13.homeplusnet.co.kr:5050
+
+#zookeeper 마스터서버 찾기
+MASTER=$(mesos-resolve `cat /etc/mesos/zk`)
+mesos-execute --master=$MASTER --name="cluster-test" --command="sleep 5"
 
 
 ######################################
@@ -120,25 +125,21 @@ MARATHON_MASTER=zk://10.10.64.77:2181,10.10.64.78:2181,10.10.64.79:2181/mesos
 MARATHON_ZK=zk://10.10.64.77:2181,10.10.64.78:2181,10.10.64.79:2181/marathon
 EOF
 
+systemctl start marathon  
+systemctl status marathon
 
-######################################
-#verify
-######################################
-
-#zookeeper 마스터서버 찾기
-MASTER=$(mesos-resolve `cat /etc/mesos/zk`)
-mesos-execute --master=$MASTER --name="cluster-test" --command="sleep 5"
-
-
-#mesos
-http://t1vbigdata11.homeplusnet.co.kr:5050
-http://t1vbigdata12.homeplusnet.co.kr:5050
-http://t1vbigdata13.homeplusnet.co.kr:5050
-
-#marathon
+#marathon 마스터 접속테스트 but only 1 leader
 http://t1vbigdata11.homeplusnet.co.kr:8080
 http://t1vbigdata12.homeplusnet.co.kr:8080
 http://t1vbigdata13.homeplusnet.co.kr:8080
+
+
+#connect test after reboot
+마라톤 리더 1대 먼저 리붓하여 페일오버되는지 확인도 함
+
+systemctl status zookeeper
+systemctl status mesos-master
+systemctl status marathon
 
 
 
@@ -148,6 +149,7 @@ http://t1vbigdata13.homeplusnet.co.kr:8080
 ##########################################
 ##########################################
 
+#아래 명령어 전체 복사하여 붙여넣기하여 설치 완료
 
 systemctl disable firewalld
 systemctl stop firewalld
@@ -163,6 +165,10 @@ systemctl start  mesos-slave
 systemctl status mesos-slave
 
 
+#마스터서버URL에서 에이전트노드, 클러스터 코어/메모리 확인 and activated 6  확인
+
+
+
 
 ################################
 샘플 job 테스트
@@ -172,6 +178,12 @@ MASTER=$(mesos-resolve `cat /etc/mesos/zk`)
 mesos-execute --master=$MASTER --name="t1vbigdata11.homeplusnet.co.kr" --command="sleep 5"
 
 http://t1vbigdata11.homeplusnet.co.kr:5050
+첫화면에서 tasks -> finished 1 확인
+상단 frameworks 메뉴 밑에 Completed Frameworks 확인
+
+
+
+
 
 
 
