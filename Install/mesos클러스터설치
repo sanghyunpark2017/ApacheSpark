@@ -13,24 +13,19 @@ cat << EOF >> /etc/hosts
 10.10.64.74 t1vbigdata08 t1vbigdata08.homeplusnet.co.kr
 10.10.64.75 t1vbigdata09 t1vbigdata09.homeplusnet.co.kr
 10.10.64.76 t1vbigdata10 t1vbigdata10.homeplusnet.co.kr
-10.10.64.77 t1vbigdata11 t1vbigdata11.homeplusnet.co.kr
-10.10.64.78 t1vbigdata12 t1vbigdata12.homeplusnet.co.kr
-10.10.64.79 t1vbigdata13 t1vbigdata13.homeplusnet.co.kr
-10.10.64.80 t1vbigdata14 t1vbigdata14.homeplusnet.co.kr
-10.10.64.81 t1vbigdata15 t1vbigdata15.homeplusnet.co.kr
-10.10.64.82 t1vbigdata16 t1vbigdata16.homeplusnet.co.kr
-10.10.64.83 t1vbigdata17 t1vbigdata17.homeplusnet.co.kr
-10.10.64.84 t1vbigdata18 t1vbigdata18.homeplusnet.co.kr
-10.10.64.85 t1vbigdata19 t1vbigdata19.homeplusnet.co.kr
+10.10.64.77 t1vbigdata11 t1vbigdata11.homeplusnet.co.kr   #mesos master
+10.10.64.78 t1vbigdata12 t1vbigdata12.homeplusnet.co.kr   #mesos master
+10.10.64.79 t1vbigdata13 t1vbigdata13.homeplusnet.co.kr   #mesos master
+10.10.64.80 t1vbigdata14 t1vbigdata14.homeplusnet.co.kr   #mesos slave
+10.10.64.81 t1vbigdata15 t1vbigdata15.homeplusnet.co.kr   #mesos slave
+10.10.64.82 t1vbigdata16 t1vbigdata16.homeplusnet.co.kr   #mesos slave
+10.10.64.83 t1vbigdata17 t1vbigdata17.homeplusnet.co.kr   #mesos slave
+10.10.64.84 t1vbigdata18 t1vbigdata18.homeplusnet.co.kr   #mesos slave
+10.10.64.85 t1vbigdata19 t1vbigdata19.homeplusnet.co.kr   #mesos slave
 10.10.64.86 t1vbigdata20 t1vbigdata20.homeplusnet.co.kr
 10.10.64.87 t1vbigdata21 t1vbigdata21.homeplusnet.co.kr
 10.10.64.88 t1vbigdata22 t1vbigdata22.homeplusnet.co.kr
 EOF
-
-
-
-
-
 
 
 https://github.com/mesosphere/open-docs/blob/master/getting-started/install.md
@@ -46,11 +41,7 @@ https://github.com/mesosphere/open-docs/blob/master/getting-started/install.md
 systemctl disable firewalld
 systemctl stop firewalld
 
-
 rpm -Uvh http://repos.mesosphere.com/el/7/noarch/RPMS/mesosphere-el-repo-7-1.noarch.rpm
-
-rpm -Uvh http://repos.mesosphere.io/el/7/noarch/RPMS/mesosphere-el-repo-7-1.noarch.rpm  
-
 
 sudo yum -y install mesos marathon
 sudo yum -y install mesosphere-zookeeper
@@ -61,24 +52,10 @@ sudo yum -y install mesosphere-zookeeper
 #Config Zookeeper (Master 3EA only)
 ######################################
 
-
 #change zookeeper id
-
-cat << EOF >  /var/lib/zookeeper/myid 
-1
-EOF
-
-
-cat << EOF >  /var/lib/zookeeper/myid 
-2
-EOF
-
-
-cat << EOF >  /var/lib/zookeeper/myid 
-3
-EOF
-
-
+echo "1" > /var/lib/zookeeper/myid 
+echo "2" > /var/lib/zookeeper/myid 
+echo "3" > /var/lib/zookeeper/myid 
 
 
 #specify zookeer master 3 nodes
@@ -87,8 +64,8 @@ server.1=10.10.64.77:2888:3888
 server.2=10.10.64.78:2888:3888
 server.3=10.10.64.79:2888:3888
 EOF
-clear
-cat  /etc/zookeeper/conf/zoo.cfg
+
+systemctl start zookeeper
 
 
 ######################################
@@ -96,55 +73,53 @@ cat  /etc/zookeeper/conf/zoo.cfg
 ######################################
 
 #specify zookeeper nodes
-
 cat << EOF >  /etc/mesos/zk
 zk://10.10.64.77:2181,10.10.64.78:2181,10.10.64.79:2181/mesos
 EOF
 
-
+#클러스터이름 지정
+echo "HMP-Mesos" >  /etc/mesos-master/cluster
 
 #quorm set 2
--마스터서버가 3대이면 쿼럼은 2
--LD_LIBRARY_PATH 를 지정해줘야 실행시 오류가 발생하지 않는다고 하는데 추후 확인이 필요함
+echo "2" >  /etc/mesos-master/quorum
+
+
+echo "t1vbigdata11.homeplusnet.co.kr" > /etc/mesos-master/hostname
+mkdir -p /etc/marathon/conf
+echo "t1vbigdata11.homeplusnet.co.kr" > /etc/marathon/conf/hostname
+
+echo "t1vbigdata12.homeplusnet.co.kr" > /etc/mesos-master/hostname
+mkdir -p /etc/marathon/conf
+echo "t1vbigdata12.homeplusnet.co.kr" > /etc/marathon/conf/hostname
+
+echo "t1vbigdata13.homeplusnet.co.kr" > /etc/mesos-master/hostname
+mkdir -p /etc/marathon/conf
+echo "t1vbigdata13.homeplusnet.co.kr" > /etc/marathon/conf/hostname
 
 
 
-cat << EOF >  /etc/mesos-master/quorum
-2
-EOF
+systemctl stop mesos-slave.service
+systemctl disable mesos-slave.service
 
+systemctl restart mesos-master  
 
-#Disable mesos-slave service
-
-systemctl disable mesos-slave
-
-
-######################################
-#Config Marathon (Master 3EA only)
-######################################
-
-cd /etc/default
-bk marathon
-
-cat << EOF > /etc/default/marathon
-MARATHON_MASTER=zk://10.10.64.77:2181,10.10.64.78:2181,10.10.64.79:2181/mesos
-MARATHON_ZK=zk://10.10.64.77:2181,10.10.64.78:2181,10.10.64.79:2181/marathon
-EOF
-
-
-######################################
-#Start Services zookeeper->mesos->marathon
-######################################
-
-
-systemctl start zookeeper
-systemctl start mesos-master
-systemctl start marathon
+systemctl restart marathon  
 
 
 systemctl status zookeeper
 systemctl status mesos-master
 systemctl status marathon
+
+
+######################################
+#Config Marathon (Master 3EA only) => 마라톤구성은추후
+######################################
+
+cat << EOF >> /etc/default/marathon
+MARATHON_MASTER=zk://10.10.64.77:2181,10.10.64.78:2181,10.10.64.79:2181/mesos
+MARATHON_ZK=zk://10.10.64.77:2181,10.10.64.78:2181,10.10.64.79:2181/marathon
+EOF
+
 
 ######################################
 #verify
@@ -154,7 +129,8 @@ systemctl status marathon
 MASTER=$(mesos-resolve `cat /etc/mesos/zk`)
 mesos-execute --master=$MASTER --name="cluster-test" --command="sleep 5"
 
-#zookeeper
+
+#mesos
 http://t1vbigdata11.homeplusnet.co.kr:5050
 http://t1vbigdata12.homeplusnet.co.kr:5050
 http://t1vbigdata13.homeplusnet.co.kr:5050
@@ -172,25 +148,18 @@ http://t1vbigdata13.homeplusnet.co.kr:8080
 ##########################################
 ##########################################
 
+
 systemctl disable firewalld
 systemctl stop firewalld
-
-
-#rpm -Uvh http://repos.mesosphere.com/el/7/noarch/RPMS/mesosphere-el-repo-7-1.noarch.rpm
-rpm -Uvh http://repos.mesosphere.io/el/7/noarch/RPMS/mesosphere-el-repo-7-1.noarch.rpm  
-
+rpm -Uvh http://repos.mesosphere.com/el/7/noarch/RPMS/mesosphere-el-repo-7-1.noarch.rpm
 yum -y install mesos 
-
 systemctl disable mesos-master.service
-
 
 cat << EOF >  /etc/mesos/zk
 zk://10.10.64.77:2181,10.10.64.78:2181,10.10.64.79:2181/mesos
 EOF
 
-
 systemctl start  mesos-slave 
-
 systemctl status mesos-slave
 
 
