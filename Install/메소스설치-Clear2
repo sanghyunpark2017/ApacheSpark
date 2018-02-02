@@ -1,0 +1,84 @@
+
+
+##common os
+
+yum update -y
+
+systemctl stop firewalld.service
+systemctl disable firewalld.service
+
+
+
+vi /etc/selinux/config
+------------------------------------------------------
+SELINUX=enforcing
+SELINUXTYPE=targeted
+
+to:
+
+SELINUX=disabled
+#SELINUXTYPE=targeted
+------------------------------------------------------
+
+setenforce 0
+
+
+### mesos + slaves
+
+
+yum install -y maven
+
+
+rpm -Uvh http://repos.mesosphere.io/el/7/noarch/RPMS/mesosphere-el-repo-7-2.noarch.rpm
+
+
+# to install master and/or slave
+yum -y install mesos
+
+# to install marathon
+yum -y install marathon
+
+# to install chronos
+yum -y install chronos.x86_64
+
+
+vi /etc/mesos/zk
+------------------------------------------------------
+zk://localhost:2181/mesos
+
+=>
+
+zk://t1vbigdata01.homeplusnet.co.kr:2181,t1vbigdata02.homeplusnet.co.kr:2181,t1vbigdata03.homeplusnet.co.kr:2181/mesos
+------------------------------------------------------
+
+
+이하 master와 slave 설정이 다름
+
+#mesos master
+
+systemctl enable mesos-master.service
+systemctl start mesos-master.service
+
+systemctl mask mesos-slave.service
+systemctl stop mesos-slave.service
+
+systemctl status mesos-master.service
+
+http://t1vbigdata11.homeplusnet.co.kr:5050
+
+
+#mesos slaves
+
+systemctl mask mesos-master.service
+systemctl stop mesos-master.service
+
+systemctl enable mesos-slave.service
+systemctl start mesos-slave.service
+
+systemctl status mesos-slave.service
+
+
+
+
+
+
