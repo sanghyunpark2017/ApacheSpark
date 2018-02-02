@@ -1,0 +1,106 @@
+
+
+
+1. Edit /etc/hosts
+
+
+systemctl stop firewalld
+systemctl disable firewalld
+
+
+cat << EOF >> /etc/hosts
+10.10.64.67 t1vbigdata01
+10.10.64.68 t1vbigdata02
+10.10.64.69 t1vbigdata03
+EOF
+
+
+
+2. Download and configure zookeeper
+
+
+cd ~
+wget http://apache.tt.co.kr/zookeeper/zookeeper-3.4.10/zookeeper-3.4.10.tar.gz 
+tar xvf zookeeper-3.4.10.tar.gz 
+chown -R root:root zookeeper-3.4.10
+mv zookeeper-3.4.10 zookeeper
+cp /root/zookeeper/conf/zoo_sample.cfg /root/zookeeper/conf/zoo.cfg
+
+
+
+
+vi /root/zookeeper/conf/zoo.cfg
+--------------------------------------------------------------------------
+#dataDir=/tmp/zookeeper
+dataDir=/root/zookeeper_data
+...
+..
+server.1=t1vbigdata01:2888:3888
+server.2=t1vbigdata02:2888:3888
+server.3=t1vbigdata03:2888:3888
+--------------------------------------------------------------------------
+
+
+mkdir /root/zookeeper_data
+touch /root/zookeeper_data/myid
+
+
+echo 1 >> /root/zookeeper_data/myid
+echo 2 >> /root/zookeeper_data/myid
+echo 3 >> /root/zookeeper_data/myid
+
+
+3. Start zookeeper cluster
+
+/root/zookeeper/bin/zkServer.sh start /root/zookeeper/conf/zoo.cfg
+
+/root/zookeeper/bin/zkServer.sh stop /root/zookeeper/conf/zoo.cfg
+
+
+#start for testing...
+/root/zookeeper/bin/zkServer.sh start-foreground /root/zookeeper/conf/zoo.cfg
+
+
+4. Test zookeeper running
+
+#최소 2대는 실행되고 있어야 상태값 표시, 1대만실행될떄는오류발생
+
+
+
+/root/zookeeper/bin/zkServer.sh status 
+
+
+/root/zookeeper/bin/zkCli.sh -server 10.10.64.67:2181,10.10.64.68:2181,10.10.64.69:2181
+
+ 
+
+5. 
+
+cd /root
+
+cat << EOF > /root/zookeeper-start.sh
+/root/zookeeper/bin/zkServer.sh start /root/zookeeper/conf/zoo.cfg
+EOF
+
+
+cat << EOF > /root/zookeeper-stop.sh
+/root/zookeeper/bin/zkServer.sh stop /root/zookeeper/conf/zoo.cfg
+EOF
+
+cat << EOF > /root/zookeeper-status.sh
+/root/zookeeper/bin/zkServer.sh status 
+EOF
+
+
+chmod 755  /root/zookeeper-start.sh
+chmod 755  /root/zookeeper-stop.sh
+chmod 755  /root/zookeeper-status.sh
+
+
+
+
+
+
+
+
+
