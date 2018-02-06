@@ -42,14 +42,7 @@ yum -y install marathon
 yum -y install chronos.x86_64
 
 
-vi /etc/mesos/zk
-------------------------------------------------------
-zk://localhost:2181/mesos
-
-=>
-
-zk://t1vbigdata01.homeplusnet.co.kr:2181,t1vbigdata02.homeplusnet.co.kr:2181,t1vbigdata03.homeplusnet.co.kr:2181/mesos
-------------------------------------------------------
+echo "zk://zk1:2181,zk2:2181,zk3:2181/mesos" > /etc/mesos/zk
 
 
 이하 master와 slave 설정이 다름
@@ -64,6 +57,7 @@ systemctl stop mesos-slave.service
 
 systemctl status mesos-master.service
 
+점검
 http://t1vbigdata11.homeplusnet.co.kr:5050
 
 
@@ -77,6 +71,8 @@ systemctl start mesos-slave.service
 
 systemctl status mesos-slave.service
 
+점검
+http://t1vbigdata11.homeplusnet.co.kr:5050
 
 
 
