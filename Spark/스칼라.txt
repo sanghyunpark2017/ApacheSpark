@@ -1,0 +1,37 @@
+/home/user/spark-2.2.1-bin-hadoop2.7/bin/spark-shell
+val data=sc.textFile("/udata.csv")
+data.count()
+data.first()
+
+
+val products=sc.textFile("/udata.csv")
+products.count()
+products.first()
+products.take(5)
+
+
+
+val productsMap = products.filter(product => product.split(",")(2) != "").map(product => (product.split(",")(1).toInt, product))
+productsMap.count()
+productsMap.first()
+productsMap.take(5)
+
+productsMap.take(10).foreach(println)
+
+
+val productsGroupByCategory = productsMap.groupByKey
+
+products.count()
+productsMap.count()
+productsGroupByCategory.count()
+
+
+productsGroupByCategory.take(10)
+productsGroupByCategory.take(10).foreach(println)
+
+
+val productsIterable = productsGroupByCategory.first._2
+
+productsIterable.take(10).foreach(println)
+
+productsIterable.size
