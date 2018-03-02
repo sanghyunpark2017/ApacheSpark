@@ -1,0 +1,326 @@
+7장
+
+
+추천엔진
+
+
+#파이썬쉘 실행하기 전에 디스플레이 설정
+#파이썬쉘 실행
+export MPLBACKEND="agg"
+/home/user/spark-2.2.1-bin-hadoop2.7/bin/pyspark
+
+
+#대화형 액세스 지점을 생성한다.
+#이전 버전에서는 SparkConf, SparkContext, SQLContxt를 사용하여 스파크와 상호작용했지만
+#SPARK 2.0 부터는 SparkConf, SparkContext를 자동으로 캡슐화해 SparkSession이 처리할 수 있다.
+spark = SparkSession.builder.appName("recommendationEngine").config("spark.some.config.option", "some-value").getOrCreate()
+
+
+#RDD "data" 생성
+data = sc.textFile("/udata.csv")
+
+
+#데이터객체의 형태가 RDD임
+type(data)
+
+
+#데이터건수 확인
+data.count()
+
+
+#MLlib 추천모듈에서 ALS, 행렬인수분해, rating함수 기능을 로드한다.
+from pyspark.mllib.recommendation import ALS, MatrixFactorizationModel, Rating
+
+
+#RDD "data"에서 열구분자 ","를 이용하여 4개의 열중 앞에서 부터 3개의 열만 가져온다.
+ratings = data.map(lambda l: l.split(',')).map(lambda l: Rating(int(l[0]), int(l[1]), float(l[2])))
+
+
+#데이터객체는 원본 RDD인 "data"에서 변환된 것으로 PipelinedRDD로 표기된다.
+type(ratings)
+
+
+#처음 5개 데이터를 가져온다
+ratings.take(5)
+
+
+################
+# 데이터 탐색
+################
+
+#RDD "ratings"을 가지고 DataFrame 생성한다.
+df = sqlContext.createDataFrame(ratings)
+
+
+df.select('user').distinct().count()
+df.select('user').distinct().show(5)
+
+
+df.select('product').distinct().count()
+df.select('product').distinct().show(5)
+
+
+df.groupBy("user").count().take(5)
+df.groupBy("rating").count().show()
+
+
+
+#사용자별 등급평가통계
+df.groupBy("user").count().select('count').describe().show() 
+
+
+#사용자별등급평가에 대한 개별 횟수
+df.stat.crosstab("user", "rating").show() 
+
+
+#각 사용자별 평균 등급값
+df.groupBy('user').agg({'rating': 'mean'}).take(5)
+
+
+#영화별 평균 등급값
+df.groupBy('product').agg({'rating': 'mean'}).take(5)
+
+
+
+
+################################################################
+# 파이썬 numpy 과학패키지와 matplotlib 시각화패키지
+################################################################
+
+#X윈도우 위에서 구동해야할 듯
+#쉘시작전에 디스플레이 설정 필요함 export MPLBACKEND="agg"
+
+
+import numpy as np
+
+import matplotlib as mpl
+
+mpl.use('agg')
+
+import matplotlib.pyplot as plt
+
+
+n_groups = 5
+x = df.groupBy("rating").count().select('count')
+xx = x.rdd.flatMap(lambda x: x).collect()
+fig, ax = plt.subplots()
+
+index = np.arange(n_groups)
+bar_width = 1
+opacity = 0.4
+rects1 = plt.bar(index, xx, bar_width,alpha=opacity,color='b', label='ratings')
+
+plt.xlabel('ratings')
+plt.ylabel('Counts')
+plt.title('Distribution of ratings')
+plt.xticks(index + bar_width, ('1.0', '2.0', '3.0', '4.0', '5.0'))
+plt.legend()
+plt.tight_layout()
+
+
+################################################################
+# 기본 추천엔진 만들기
+################################################################
+
+#예측메소드 predict() 실행 시 오류가 발생하면 spark 바이너리 대신 소스 컴파일해야 하며,
+#빌드 시 maven에 "-Pnetlib-lgpl" 옵셥을 줘야 한다.
+#http://www.spark.tc/blas-libraries-in-mllib/
+
+
+#데이터셋 ratings를 randomSplist() 메소드를 사용해 무작위로 8:2 비율로 학습데이터집합과 테스트데이터집합으로 쪼갠다.
+#원본데이터 : ratings
+#학습데이터 : training
+#테스트데이터 : test
+
+(training, test) = ratings.randomSplit([0.8, 0.2])
+
+
+ratings.count()
+training.count()
+test.count()
+
+
+#순위는 10, 반복실행횟수는 10
+rank = 10
+numIterations = 10
+
+ 
+#training 데이터셋을 가지고 예측모델을 생성하고
+#test 데이테셋을 가지고는 마지막 평가 열을 없애고 예측모델을 적용한다
+ 
+
+#앞서 쪼갠 training 데이터를 가지고 학습한다.
+model = ALS.train(training, rank, numIterations)
+
+
+#Matrixfactorizationsmodel 객체가 생성되었는지 확인
+type(model)
+
+
+
+#예측메소드 predict()를 사용해서 사용자(196) 및 영화(242)를 예측해본다.
+model.predict(196, 242)
+
+
+#학습에 사용한 원본(training) 보다 높게 표시되는 것을 확인할 수 있다.
+training.take(1)
+
+
+
+#test 데이터셋트에서 2개(user, product) 열만 가져와서 새로운 파이프라인RDD "testdata"를 생성한다
+testdata = test.map(lambda p: (p[0], p[1]))
+
+
+#열이 3개에서 2개로 줄었다.
+testdata.take(5)
+
+ 
+#데이터셋 "testdata"의 모든 예측 값을 계산한다.
+predictions = model.predictAll(testdata).map(lambda r: ((r[0], r[1]), r[2]))
+
+
+#첫 예측 다섯 개 표시
+predictions.take(5)
+
+
+
+################################################################
+# 사용자 기반 협업 필터링
+################################################################
+
+사용자에게 상위 N개 추천항목을 권유한다.
+
+
+#유저당 상위 10개 권장항목을 만들 것이라는 메소드를 만든다.
+recommedItemsToUsers = model.recommendProductsForUsers(10)
+
+
+#유저당 상위 10개 권장항목을 생성한다.
+recommedItemsToUsers.count()
+
+
+#앞부분 2명의 사용자에 대한 추천사항을 본다
+recommedItemsToUsers.take(2)
+
+
+
+################################################################
+# 모델 평가
+################################################################
+
+모델정합성 평가
+
+#원래의 등급 평점과 예측을 결합해 ratesAndPreds 객체를 만든다.
+ratesAndPreds = ratings.map(lambda r: ((r[0], r[1]), r[2])).join(predictions)
+
+
+#평균 제곱 오차 계산
+MSE = ratesAndPreds.map(lambda r: (r[1][0] - r[1][1])**2).mean()
+MSE
+
+from math import sqrt
+rmse = sqrt(MSE)
+
+rmse
+
+=> 1.0709472745788766 의 수치가 의미하는 것
+
+################################################################
+# 모델 선택 및 하이퍼 매개변수 튜닝
+################################################################
+
+#등급RDD 객체에서 DataFrame 객체를 생성한다.
+df = sqlContext.createDataFrame(ratings)
+
+
+#df 객체에서 디폴트 20개 레코드를 표시한다.
+type(df)
+df.show()
+
+
+#randomSplist()  메소드를 사용해 학습세트와 테스트세트를 무작위 8:2 비율로 생성한다.
+(training, test) = df.randomSplit([0.8, 0.2])
+
+
+#파라미터 tuningmodel을 실행하기 위해 필요한 모듈을 로드한다.
+from pyspark.ml.recommendation import ALS
+
+
+
+
+
+#학습데이터의 열값만을 사용한다.
+myals = ALS(userCol="user", itemCol="product", ratingCol="rating")
+
+myals
+type(myals)
+
+
+
+#als모델에 대한 기본 매개변수 설정하는 방법
+
+myals.explainParams()
+
+
+
+#파이프라인 객체를 생성하고 생성된  als 모델을 파이프라인의 한단계로 설정
+from pyspark.ml import Pipeline
+
+pipeline = Pipeline(stages=[myals])
+
+type(pipeline)
+
+ 
+#CrossValidator 및 ParamGridBuilder를 이용해 매개변수 범위를 지정한다.
+from pyspark.ml.tuning import CrossValidator, ParamGridBuilder
+paramMapExplicit = ParamGridBuilder().addGrid(myals.rank, [8, 12]).addGrid(myals.maxIter, [10, 15]).addGrid(myals.regParam, [1.0, 10.0]).build()
+
+paramMap = ParamGridBuilder().addGrid(myals.rank, [8, 12]).addGrid(myals.maxIter, [10, 15]).addGrid(myals.regParam, [1.0, 10.0]).build()
+
+
+
+
+#평가자 객체 설정하기
+from pyspark.ml.evaluation import RegressionEvaluator
+
+
+
+#평가메트릭을 "rmse", 열이름을 "rating"으로 한다
+
+evaluatorR = RegressionEvaluator(metricName="rmse", labelCol="rating")
+
+
+cvExplicit = CrossValidator(estimator=myals, estimatorParamMaps=paramMap, evaluator=evaluatorR, numFolds=5)
+
+cvExplicit = CrossValidator(estimator=myals, estimatorParamMaps=grid, evaluator=evaluatorR, numFolds=5)
+
+
+#fit() 메소드를 사용해 모델 생성
+
+cvModel = cvExplicit.fit(training)
+
+
+
+preds = cvModel.bestModel.transform(test)
+preds.show()
+
+
+evaluator = RegressionEvaluator(metricName="rmse", labelCol="rating", predictionCol="prediction")
+
+RMSE = evaluator.evaluate(preds)
+
+RMSE
+
+print("Root-mean-square error = " + str(RMSE))
+
+
+
+
+
+evaluator = RegressionEvaluator(metricName="rmse", labelCol="rating", predictionCol="prediction")
+
+rmse = evaluator.evaluate(preds)
+
+rmse
+
+
