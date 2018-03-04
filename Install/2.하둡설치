@@ -2,8 +2,19 @@
 #사전점검
 -user계정으로 설치
 -모든서버에 java8버전 설치
+-하둡1,하둡2서버 2대는 나머지 하둡서버들의 서비스를 제어할것이므로 rsa공개키설정을 해둔다
 -install이 아닌 바이너리 압축해제 설치하는 것이므로
  1대의 서버에서 먼저 전체설치하고 이를 압축해서다른서버에서 압축해제하기
+
+#모든서버에서 user계정 생성하고 ssh키생성한다
+su - user
+ssh-keygen -t rsa
+
+#하둡1과 하둡2서버 공개키설정 (이서버는 HA 네임노드임)
+su - user
+ssh-copy-id -i ~/.ssh/id_rsa.pub user@hadoop1~5
+ssh-copy-id -i ~/.ssh/id_rsa.pub user@mesos1~3
+ssh-copy-id -i ~/.ssh/id_rsa.pub user@spark1~10
 
 #설치 바이너리 다운로드
 su - user
@@ -216,7 +227,161 @@ clear
 cat /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
 
 
-#
+#하둡디렉토리생성
+
+#exit to root
+mkdir -p /mnt/hadoop/tmp
+mkdir -p /mnt/hadoop/tmp/dfs/name
+mkdir -p /mnt/hadoop/tmp/dfs/data
+
+chown -R user:user /mnt/hadoop/tmp
+chown -R user:user /mnt/hadoop/tmp/dfs/name
+chown -R user:user /mnt/hadoop/tmp/dfs/data
+su - user
+
+#최초 수동 기동(중요)
+
+##############################################################
+Step01.저널노드기동(hadoop3, hadoop4, hadoop5)
+##############################################################
+su - user
+cat << EOF > /home/user/hdstartup.sh
+/home/user/hadoop-2.9.0/sbin/hadoop-daemon.sh start journalnode
+EOF
+
+chmod +x /home/user/hdstartup.sh
+/home/user/hdstartup.sh
+
+##############################################################
+Step02.하둡파일시스템포멧 및 주키퍼관련ha상태초기화(hadoop1)
+##############################################################
+su - user
+hdfs zkfc -formatZK
+
+hdfs namenode -format
+
+##############################################################
+Step03.active namenode, resourcemgmt, historymgmt실행(hadoop1)
+##############################################################
+su - user
+cat << EOF > /home/user/hdstartup.sh
+#!/usr/bin/sh
+/home/user/hadoop-2.9.0/sbin/hadoop-daemon.sh start namenode
+sleep 1
+/home/user/hadoop-2.9.0/sbin/hadoop-daemon.sh start zkfc
+sleep 1
+/home/user/hadoop-2.9.0/sbin/yarn-daemon.sh start resourcemanager
+sleep 1
+/home/user/hadoop-2.9.0/sbin/mr-jobhistory-daemon.sh start historyserver
+EOF
+
+chmod +x /home/user/hdstartup.sh
+
+cat << EOF > /home/user/hdstop.sh
+#!/usr/bin/sh
+/home/user/hadoop-2.9.0/sbin/mr-jobhistory-daemon.sh stop historyserver
+sleep 1
+/home/user/hadoop-2.9.0/sbin/yarn-daemon.sh stop resourcemanager
+sleep 1
+/home/user/hadoop-2.9.0/sbin/hadoop-daemon.sh stop zkfc
+sleep 1
+/home/user/hadoop-2.9.0/sbin/hadoop-daemon.sh stop namenode
+EOF
+
+chmod +x /home/user/hdstop.sh
+
+/home/user/hdstartup.sh
+
+##############################################################
+Step04.standby namenode 와 resourcemgmt 실행(hadoop2)
+##############################################################
+su - user
+
+hdfs namenode -bootstrapStandby
+
+cat << EOF > /home/user/hdstartup.sh
+#!/usr/bin/sh
+/home/user/hadoop-2.9.0/sbin/hadoop-daemon.sh start namenode
+sleep 1
+/home/user/hadoop-2.9.0/sbin/hadoop-daemon.sh start zkfc
+sleep 1
+/home/user/hadoop-2.9.0/sbin/yarn-daemon.sh start resourcemanager
+EOF
+chmod +x hdstartup.sh
+
+cat << EOF > /home/user/hdstop.sh
+#!/usr/bin/sh
+/home/user/hadoop-2.9.0/sbin/yarn-daemon.sh stop resourcemanager
+sleep 1
+/home/user/hadoop-2.9.0/sbin/hadoop-daemon.sh stop zkfc
+sleep 1
+/home/user/hadoop-2.9.0/sbin/hadoop-daemon.sh stop namenode
+EOF
+chmod +x hdstop.sh
+
+/home/user/hdstartup.sh
+
+하둡1과 하둡2 서버가 제대로 동작하는지 점검
+http://10.10.64.70:50070
+http://10.10.64.71:50070
+
+##############################################################
+Step05.나머지 서버들에 데이터노드와 노드매니저실행(mesos1~3, spark1~10)
+##############################################################
+su - user
+cat << EOF > /home/user/hdstartup.sh
+#!/usr/bin/sh
+/home/user/hadoop-2.9.0/sbin/hadoop-daemon.sh start datanode
+sleep 1
+/home/user/hadoop-2.9.0/sbin/yarn-daemon.sh start nodemanager
+EOF
+chmod +x /home/user/hdstartup.sh
+
+
+
+cat << EOF > /home/user/hdstop.sh
+#!/usr/bin/sh
+/home/user/hadoop-2.9.0/sbin/yarn-daemon.sh stop  nodemanager
+sleep 1
+/home/user/hadoop-2.9.0/sbin/hadoop-daemon.sh stop  datanode
+EOF
+chmod +x /home/user/hdstop.sh
+
+
+/home/user/hdstartup.sh
+
+##############################################################
+Step06.점검
+##############################################################
+
+모든 서버에서 하둡파일시스템 검색
+
+hadoop fs -ls /
+
+
+##############################################################
+Step07.전체서비스 시작 및 중지
+##############################################################
+
+#하둡1번서버에서 모든서버의 서비스 중지
+/home/user/hadoop-2.9.0/sbin/stop-all.sh
+
+#하둡1번서버에서 모든서버의 서비스 실행
+/home/user/hadoop-2.9.0/sbin/start-all.sh
+
+이것을 하둡2번서버에서도 테스트
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
