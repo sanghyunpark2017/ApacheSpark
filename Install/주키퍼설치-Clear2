@@ -1,87 +1,71 @@
 
-
-
-1. Edit /etc/hosts
-
-
 systemctl stop firewalld
 systemctl disable firewalld
 
 
+1. Edit hosts file
+
 cat << EOF >> /etc/hosts
-10.10.64.67 t1vbigdata01
-10.10.64.68 t1vbigdata02
-10.10.64.69 t1vbigdata03
+10.10.64.67 zk1
+10.10.64.68 zk2
+10.10.64.69 zk3
+10.10.64.70 hadoop1
+10.10.64.71 hadoop2
+10.10.64.72 hadoop3
+10.10.64.73 hadoop4
+10.10.64.74 hadoop5
+10.10.64.75 mesos1
+10.10.64.76 mesos2
+10.10.64.77 mesos3
+10.10.64.78 spark1
+10.10.64.79 spark2
+10.10.64.80 spark3
+10.10.64.81 spark4
+10.10.64.82 spark5
+10.10.64.83 spark6
+10.10.64.84 spark7
+10.10.64.85 spark8
+10.10.64.86 spark9
+10.10.64.87 spark10
 EOF
-
-
 
 2. Download and configure zookeeper
 
-
-cd ~
+su -
 wget http://apache.tt.co.kr/zookeeper/zookeeper-3.4.10/zookeeper-3.4.10.tar.gz 
 tar xvf zookeeper-3.4.10.tar.gz 
+
 chown -R root:root zookeeper-3.4.10
-mv zookeeper-3.4.10 zookeeper
+mv zookeeper-3.4.10  zookeeper
 cp /root/zookeeper/conf/zoo_sample.cfg /root/zookeeper/conf/zoo.cfg
-
-
-
-
-vi /root/zookeeper/conf/zoo.cfg
---------------------------------------------------------------------------
-#dataDir=/tmp/zookeeper
-dataDir=/root/zookeeper_data
-...
-..
-server.1=t1vbigdata01:2888:3888
-server.2=t1vbigdata02:2888:3888
-server.3=t1vbigdata03:2888:3888
---------------------------------------------------------------------------
-
-
 mkdir /root/zookeeper_data
+mkdir /root/zookeeper_log
 touch /root/zookeeper_data/myid
 
+cat << EOF > /root/zookeeper/conf/zoo.cfg
+tickTime=2000
+initLimit=10
+syncLimit=5
+dataDir=/root/zookeeper_data
+dataLogDir=/root/zookeeper_log
+clientPort=2181
+server.1=zk1:2888:3888
+server.2=zk2:2888:3888
+server.3=zk3:2888:3888
+EOF
 
+#각 서버 id부여
 echo 1 >> /root/zookeeper_data/myid
 echo 2 >> /root/zookeeper_data/myid
 echo 3 >> /root/zookeeper_data/myid
 
 
-3. Start zookeeper cluster
-
-/root/zookeeper/bin/zkServer.sh start /root/zookeeper/conf/zoo.cfg
-
-/root/zookeeper/bin/zkServer.sh stop /root/zookeeper/conf/zoo.cfg
-
-
-#start for testing...
-/root/zookeeper/bin/zkServer.sh start-foreground /root/zookeeper/conf/zoo.cfg
-
-
-4. Test zookeeper running
-
-#최소 2대는 실행되고 있어야 상태값 표시, 1대만실행될떄는오류발생
-
-
-
-/root/zookeeper/bin/zkServer.sh status 
-
-
-/root/zookeeper/bin/zkCli.sh -server 10.10.64.67:2181,10.10.64.68:2181,10.10.64.69:2181
-
- 
-
-5. 
+3.시작/종료 스크립트생성
 
 cd /root
-
 cat << EOF > /root/zookeeper-start.sh
 /root/zookeeper/bin/zkServer.sh start /root/zookeeper/conf/zoo.cfg
 EOF
-
 
 cat << EOF > /root/zookeeper-stop.sh
 /root/zookeeper/bin/zkServer.sh stop /root/zookeeper/conf/zoo.cfg
@@ -91,10 +75,20 @@ cat << EOF > /root/zookeeper-status.sh
 /root/zookeeper/bin/zkServer.sh status 
 EOF
 
-
 chmod 755  /root/zookeeper-start.sh
 chmod 755  /root/zookeeper-stop.sh
 chmod 755  /root/zookeeper-status.sh
+
+4.자동실행스크립팅
+cat << EOF >> /etc/rc.d/rc.local
+/root/zookeeper-start.sh
+EOF
+
+
+5. 서비스시작 및 점검
+/root/zookeeper-start.sh
+jps
+
 
 
 
