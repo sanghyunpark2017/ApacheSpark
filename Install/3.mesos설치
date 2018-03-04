@@ -1,11 +1,23 @@
 
-#메소스서버는 각 서버마다 설치한다
+#메소스서버는 각 서버마다 설치한다(root)
 #master서버 : mesos1~3
 #slave서버 : spark1~10
+#master서버에 공개키설정한다
+mesos1->mesos2~10
+mesos2->mesos1,3~10
+mesos3->mesos1~2,4~10
+
 
 ###############################
 ## MASTERS (3대)
 ###############################
+
+#공개키설정
+ssh-copy-id -i ~/.ssh/id_rsa.pub root@mesos1~3
+ssh-copy-id -i ~/.ssh/id_rsa.pub root@spark1~10
+
+#공개키확인
+cat /root/.ssh/authorized_keys
 
 #mesos master서버 3대 인스톨(slave서버는 나중에 인스톨)
 su -
