@@ -4,6 +4,8 @@
 
 #파이썬쉘 실행하기 전에 디스플레이 설정
 #파이썬쉘 실행
+
+su - user
 export MPLBACKEND="agg"
 /home/user/spark-2.2.1-bin-hadoop2.7/bin/pyspark
 
