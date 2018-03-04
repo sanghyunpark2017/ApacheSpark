@@ -3,7 +3,11 @@
 #master서버 : mesos1~3
 #slave서버 : spark1~10
 
-#mesos서버(master+slave)에 인스톨
+###############################
+## MASTERS (3대)
+###############################
+
+#mesos master서버 3대 인스톨(slave서버는 나중에 인스톨)
 su -
 rpm -Uvh http://repos.mesosphere.io/el/7/noarch/RPMS/mesosphere-el-repo-7-1.noarch.rpm
 yum -y install mesos 
@@ -14,13 +18,10 @@ rm -rf /etc/mesos-master
 rm -rf /etc/mesos
 rm -rf /etc/mesos-slave
 
-###############################
-## MASTERS (3대)
-###############################
-
-#일단 마스터서버 3대 모두 슬레이브서비스 disabled
-systemctl stop mesos-slave
+#일단 마스터서버 3대 모두 슬레이브서비스 disable후 중지
 systemctl disable mesos-slave
+systemctl stop mesos-slave
+
 
 #마스터 환경설정
 
@@ -62,8 +63,7 @@ http://10.10.64.77:5050
 #All other slaves (spark1~5)
 ##########################
 
-#일단 설치와 함께 자동으로 실행된 마스터 서비스를 disable 하고 슬레이드도 중단시킨다.
-루트 계정설치
+#일단 설치와 함께 자동으로 실행되는 마스터 서비스를 disable 하고 슬레이브도 중단시킨다.
 #su -
 rpm -Uvh http://repos.mesosphere.io/el/7/noarch/RPMS/mesosphere-el-repo-7-1.noarch.rpm
 yum -y install mesos 
@@ -71,17 +71,13 @@ systemctl stop mesos-master.service
 systemctl disable mesos-master.service
 systemctl stop mesos-slave
 
-
-
 #환경설정 
 echo "zk://zk1:2181,zk2:2181,zk3:2181/mesos" >  /etc/mesos/zk
 printf "mesos1\nmesos2\nmesos3" > /etc/mesos/masters
 printf "spark1\nspark2\nspark3\nspark4\nspark5" > /etc/mesos/slaves
 echo "/home/user/hadoop-2.9.0"  > /etc/mesos-slave/hadoop_home
 
-
-
-각자의  slave 정보를 작성
+#각자의  slave 정보를 작성
 echo "10.10.64.78"  > /etc/mesos-slave/ip
 echo "10.10.64.78"  > /etc/mesos-slave/hostname
 
@@ -126,13 +122,5 @@ echo "10.10.64.87"  > /etc/mesos-slave/hostname
 systemctl stop mesos-slave
 systemctl start mesos-slave
 systemctl status mesos-slave
-
-
-
-
-
-
-
-
 
 
