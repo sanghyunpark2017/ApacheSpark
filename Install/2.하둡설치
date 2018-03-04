@@ -1,0 +1,231 @@
+
+#사전점검
+-user계정으로 설치
+-모든서버에 java8버전 설치
+-install이 아닌 바이너리 압축해제 설치하는 것이므로
+ 1대의 서버에서 먼저 전체설치하고 이를 압축해서다른서버에서 압축해제하기
+
+#설치 바이너리 다운로드
+su - user
+wget http://10.10.63.63:8089/hadoop-2.9.0.tar.gz
+tar zxf hadoop-2.9.0.tar.gz
+
+#user계정 프로파일 수정
+vi /home/user/.bash_profile
+-----------------------------------------------------------------------------------------------
+## JAVA env variables
+export JAVA_HOME=/opt/jdk1.8.0_131
+export PATH=$PATH:$JAVA_HOME/bin
+export CLASSPATH=.:$JAVA_HOME/jre/lib:$JAVA_HOME/lib:$JAVA_HOME/lib/tools.jar
+## HADOOP Env
+export HADOOP_HOME=/home/user/hadoop-2.9.0
+export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
+export HADOOP_INSTALL=$HADOOP_HOME
+export HADOOP_MAPRED_HOME=$HADOOP_HOME
+export HADOOP_COMMON_HOME=$HADOOP_HOME
+export HADOOP_HDFS_HOME=$HADOOP_HOME
+export YARN_HOME=$HADOOP_HOME
+export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native
+export HADOOP_OPTS="-Djava.library.path=$HADOOP_HOME/lib"
+export PATH=$PATH:$HADOOP_HOME/sbin:$HADOOP_HOME/bin
+-----------------------------------------------------------------------------------------------
+
+#프로파일 적용
+source   /home/user/.bash_profile
+clear
+echo $HADOOP_OPTS
+
+#하둡 환경변수 파일에 자바경로 지정
+cat << EOF >> /home/user/hadoop-2.9.0/etc/hadoop/hadoop-env.sh
+export JAVA_HOME=/opt/jdk1.8.0_131
+EOF
+clear
+cat /home/user/hadoop-2.9.0/etc/hadoop/hadoop-env.sh
+
+#slaves파일작성
+cat << EOF > /home/user/hadoop-2.9.0/etc/hadoop/slaves
+spark1
+spark2
+spark3
+spark4
+spark5
+spark6
+spark7
+spark8
+spark9
+spark10
+mesos1
+mesos2
+mesos3
+EOF
+clear
+cat  /home/user/hadoop-2.9.0/etc/hadoop/slaves
+
+#core-site.xml파일작성
+sed -i -e "s/<\/configuration>//g" /home/user/hadoop-2.9.0/etc/hadoop/core-site.xml
+printf "\t<property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/core-site.xml
+printf "\t\t<name>fs.defaultFS</name>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/core-site.xml
+printf "\t\t<value>hdfs://mycluster</value>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/core-site.xml
+printf "\t</property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/core-site.xml
+printf "\t<property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/core-site.xml
+printf "\t\t<name>ha.zookeeper.quorum</name>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/core-site.xml
+printf "\t\t<value>zk1:2181,zk2:2181,zk3:2181</value>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/core-site.xml 
+printf "\t</property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/core-site.xml
+printf "\t<property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/core-site.xml
+printf "\t\t<name>hadoop.tmp.dir</name>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/core-site.xml
+printf "\t\t<value>/mnt/hadoop/tmp</value>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/core-site.xml
+printf "\t</property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/core-site.xml
+printf "</configuration>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/core-site.xml
+clear
+cat /home/user/hadoop-2.9.0/etc/hadoop/core-site.xml
+
+
+#hdfs-site.xml파일작성
+rm  /home/user/hadoop-2.9.0/etc/hadoop/hdfs-site.xml
+vi /home/user/hadoop-2.9.0/etc/hadoop/hdfs-site.xml 
+-------------------------------------------------------------------------------------------------------------
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License. See accompanying LICENSE file.
+-->
+
+<!-- Put site-specific property overrides in this file. -->
+
+<configuration>
+
+
+        <property>
+                <name>dfs.nameservices</name>
+                <value>mycluster</value>
+        </property>
+        <property>
+                <name>dfs.ha.namenodes.mycluster</name>
+                <value>nn1,nn2</value>
+        </property>
+        <property>
+                <name>dfs.namenode.rpc-address.mycluster.nn1</name>
+                <value>hadoop1:8020</value>
+        </property>
+        <property>
+                <name>dfs.namenode.rpc-address.mycluster.nn2</name>
+                <value>hadoop2:8020</value>
+        </property>
+        <property>
+                <name>dfs.namenode.http-address.mycluster.nn1</name>
+                <value>hadoop1:50070</value>
+        </property>
+        <property>
+                <name>dfs.namenode.http-address.mycluster.nn2</name>
+                <value>hadoop2:50070</value>
+        </property>
+        <property>
+                <name>dfs.namenode.shared.edits.dir</name>
+                <value>qjournal://hadoop3:8485;hadoop4:8485;hadoop5:8485/mycluster</value>
+        </property>
+        <property>
+                <name>dfs.client.failover.proxy.provider.mycluster</name>
+                <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+        </property>
+        <property>
+                <name>dfs.ha.fencing.methods</name>
+                <value>sshfence</value>
+        </property>
+        <property>
+                <name>dfs.ha.fencing.ssh.private-key-files</name>
+                <value>/home/user/.ssh/id_rsa</value>
+        </property>
+        <property>
+                <name>dfs.ha.automatic-failover.enabled</name>
+                <value>true</value>
+        </property>
+        <property>
+                <name>dfs.namenode.datanode.registration.ip-hostname-check</name>
+                <value>false</value>
+        </property>
+</configuration>
+-------------------------------------------------------------------------------------------------------------
+
+
+#(생략가능)mapred-site.xml파일작성
+cp /home/user/hadoop-2.9.0/etc/hadoop/mapred-site.xml.template /home/user/hadoop-2.9.0/etc/hadoop/mapred-site.xml
+sed -i -e "s/<\/configuration>//g" /home/user/hadoop-2.9.0/etc/hadoop/mapred-site.xml
+printf "\t<property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/mapred-site.xml
+printf "\t\t<name>mapreduce.framework.name</name>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/mapred-site.xml
+printf "\t\t<value>yarn</value>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/mapred-site.xml
+printf "\t</property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/mapred-site.xml
+printf "</configuration>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/mapred-site.xml 
+clear
+cat /home/user/hadoop-2.9.0/etc/hadoop/mapred-site.xml 
+
+
+#(생략가능)yarn-site.xml파일작성
+sed -i -e "s/<\/configuration>//g" /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t<property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t\t<name>yarn.nodemanager.aux-services</name>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t\t<value>mapreduce_shuffle</value>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t</property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t<property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t\t<name>yarn.resourcemanager.ha.enabled</name>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t\t<value>true</value>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t</property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t<property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t\t<name>yarn.resourcemanager.cluster-id</name>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t\t<value>rm-cluster</value>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t</property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t<property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t\t<name>yarn.resourcemanager.ha.rm-ids</name>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t\t<value>rm1,rm2</value>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t</property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t<property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t\t<name>yarn.resourcemanager.hostname.rm1</name>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t\t<value>hadoop1</value>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t</property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t<property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t\t<name>yarn.resourcemanager.hostname.rm2</name>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t\t<value>hadoop2</value>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t</property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t<property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t\t<name>yarn.resourcemanager.zk-address</name>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t\t<value>zk1:2181,zk2:2181,zk3:2181</value>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t</property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t<property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t\t<name>yarn.resourcemanager.ha.automatic-failover.enabled</name>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t\t<value>true</value>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t</property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t<property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t\t<name>yarn.resourcemanager.store.class</name>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t\t<value>org.apache.hadoop.yarn.server.resourcemanager.recovery.ZKRMStateStore</value>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t</property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t<property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t\t<name>yarn.resourcemanager.recovery.enabled</name>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t\t<value>true</value>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "\t</property>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+printf "</configuration>\n" | tee -a /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml 
+clear
+cat /home/user/hadoop-2.9.0/etc/hadoop/yarn-site.xml
+
+
+#
+
+
+
+
+
+
+
+
+
+
+
+
