@@ -58,6 +58,66 @@ cat /home/user/spark-2.2.1-bin-hadoop2.7/conf/slaves
 
 
 
+#테스트
+
+#1.독립실행모드(any spark)
+/home/user/spark-2.2.1-bin-hadoop2.7/bin/spark-shell
+val textFile=sc.textFile("/README.md")
+textFile.count()
+textFile.first()
+textFile.filter(line => line.contains("Spark")).count()
+textFile.map(line => line.split(" ").size).reduce((a, b) => if (a > b) a else b)
+import java.lang.Math
+textFile.map(line => line.split(" ").size).reduce((a, b) => Math.max(a, b))
+
+#2.클러스터모드(mesos1, mesos2, mesos3)
+su - user
+/home/user/spark-2.2.1-bin-hadoop2.7/sbin/start-mesos-dispatcher.sh -m mesos://zk://zk1:2181,zk2:2181,zk3:2181/mesos 
+
+#any sparks
+1 
+su - user
+/home/user/spark-2.2.1-bin-hadoop2.7/bin/spark-submit \
+--class org.apache.spark.examples.SparkPi \
+--master mesos://mesos1:7077 \
+--deploy-mode cluster \
+--supervise /home/user/spark-2.2.1-bin-hadoop2.7/examples/jars/spark-examples_2.11-2.2.1.jar 
+
+2 
+su - user
+cd /home/user/spark-2.2.1-bin-hadoop2.7
+./bin/spark-submit \
+--master mesos://mesos1:7077 \
+--deploy-mode cluster \
+--total-executor-cores 2 \
+--executor-memory 3G \
+--conf spark.mesos.role=dev \
+./examples/src/main/python/pi.py \
+100
+
+
+
+cluster mode로 실행하기 위해서는 --master 옵션에 MesosClusterDispatcher를 실행시킨 서버의 호스트와 포트를 지정해주어야 한다...
+cluster mode는 mesos://mesos1:7077, 
+client mode는 mesos://zk://zk1:2181,zk2:2181,zk3:2181/mesos로 사용하면 되겠다..
+
+=> 클러스터 모드는 spark-submit을 통해서만 가능한듯하다
+
+클라이언트 구동 예시
+/home/user/spark-2.2.1-bin-hadoop2.7/bin/spark-shell --master mesos://zk://zk1:2181,zk2:2181,zk3:2181/mesos
+
+
+
+spark.executor.memory=1g
+spark.eventLog.enabled=true
+spark.serializer=org.apache.spark.serializer.KryoSerializer
+
+
+끝~
+
+
+
+
 
 
 
