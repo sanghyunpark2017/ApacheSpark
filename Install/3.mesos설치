@@ -1,0 +1,138 @@
+
+#메소스서버는 각 서버마다 설치한다
+#master서버 : mesos1~3
+#slave서버 : spark1~10
+
+#mesos서버(master+slave)에 인스톨
+su -
+rpm -Uvh http://repos.mesosphere.io/el/7/noarch/RPMS/mesosphere-el-repo-7-1.noarch.rpm
+yum -y install mesos 
+
+#중요!!! 혹시 재설치한다면 이전 폴더를 꼭 정리해줘야 함
+yum -y remove mesos
+rm -rf /etc/mesos-master
+rm -rf /etc/mesos
+rm -rf /etc/mesos-slave
+
+###############################
+## MASTERS (3대)
+###############################
+
+#일단 마스터서버 3대 모두 슬레이브서비스 disabled
+systemctl stop mesos-slave
+systemctl disable mesos-slave
+
+#마스터 환경설정
+
+echo "zk://zk1:2181,zk2:2181,zk3:2181/mesos" >  /etc/mesos/zk
+printf "mesos1\nmesos2\nmesos3" > /etc/mesos/masters
+printf "spark1\nspark2\nspark3\nspark4\nspark5" > /etc/mesos/slaves
+echo "2" >  /etc/mesos-master/quorum
+echo "/var/lib/mesos" > /etc/mesos-master/work_dir
+echo "HMP-mesos" > /etc/mesos-master/cluster
+
+각 마스터서버 마다 각자의 ip주소를 작성한다.
+echo "10.10.64.75" > /etc/mesos-master/hostname
+echo "10.10.64.75" > /etc/mesos-master/ip
+
+
+echo "10.10.64.76" > /etc/mesos-master/hostname
+echo "10.10.64.76" > /etc/mesos-master/ip
+
+
+echo "10.10.64.77" > /etc/mesos-master/hostname
+echo "10.10.64.77" > /etc/mesos-master/ip
+
+#마스터서비스 시작
+systemctl stop mesos-master
+systemctl start mesos-master
+systemctl status mesos-master
+
+#마스터서버 점검
+3대 모드 프로세스 status가 정상인지 확인한 후 
+각 마스터서버의 ip주소로 접속 테스트
+http://10.10.64.75:5050 
+http://10.10.64.76:5050
+http://10.10.64.77:5050
+
+브라우저의 retry가 없고 어느 서버로 들어가든 leader는 1개로 표시되는지 확인한다.
+그리고 에이전트 항목에는 모두 0으로 표기된다.
+
+##########################
+#All other slaves (spark1~5)
+##########################
+
+#일단 설치와 함께 자동으로 실행된 마스터 서비스를 disable 하고 슬레이드도 중단시킨다.
+루트 계정설치
+#su -
+rpm -Uvh http://repos.mesosphere.io/el/7/noarch/RPMS/mesosphere-el-repo-7-1.noarch.rpm
+yum -y install mesos 
+systemctl stop mesos-master.service
+systemctl disable mesos-master.service
+systemctl stop mesos-slave
+
+
+
+#환경설정 
+echo "zk://zk1:2181,zk2:2181,zk3:2181/mesos" >  /etc/mesos/zk
+printf "mesos1\nmesos2\nmesos3" > /etc/mesos/masters
+printf "spark1\nspark2\nspark3\nspark4\nspark5" > /etc/mesos/slaves
+echo "/home/user/hadoop-2.9.0"  > /etc/mesos-slave/hadoop_home
+
+
+
+각자의  slave 정보를 작성
+echo "10.10.64.78"  > /etc/mesos-slave/ip
+echo "10.10.64.78"  > /etc/mesos-slave/hostname
+
+
+echo "10.10.64.79"  > /etc/mesos-slave/ip
+echo "10.10.64.79"  > /etc/mesos-slave/hostname
+
+
+echo "10.10.64.80"  > /etc/mesos-slave/ip
+echo "10.10.64.80"  > /etc/mesos-slave/hostname
+
+
+echo "10.10.64.81"  > /etc/mesos-slave/ip
+echo "10.10.64.81"  > /etc/mesos-slave/hostname
+
+
+echo "10.10.64.82"  > /etc/mesos-slave/ip
+echo "10.10.64.82"  > /etc/mesos-slave/hostname
+
+#spark6
+echo "10.10.64.83"  > /etc/mesos-slave/ip
+echo "10.10.64.83"  > /etc/mesos-slave/hostname
+
+#spark7
+echo "10.10.64.84"  > /etc/mesos-slave/ip
+echo "10.10.64.84"  > /etc/mesos-slave/hostname
+
+#spark8
+echo "10.10.64.85"  > /etc/mesos-slave/ip
+echo "10.10.64.85"  > /etc/mesos-slave/hostname
+
+#spark9
+echo "10.10.64.86"  > /etc/mesos-slave/ip
+echo "10.10.64.86"  > /etc/mesos-slave/hostname
+
+#spark10
+echo "10.10.64.87"  > /etc/mesos-slave/ip
+echo "10.10.64.87"  > /etc/mesos-slave/hostname
+
+#이제 mesos 서버 화면에서 에이전트 수 보면서 슬레이브 서비스를 순차적으로 실행한다.
+#슬레이브서비스 재시작 후 Agent activated 숫자 증가와 코어/메모리 늘어나는 것 확인한다.
+systemctl stop mesos-slave
+systemctl start mesos-slave
+systemctl status mesos-slave
+
+
+
+
+
+
+
+
+
+
