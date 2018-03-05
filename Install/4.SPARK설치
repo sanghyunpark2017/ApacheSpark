@@ -25,6 +25,7 @@ cp  spark-defaults.conf.template  spark-defaults.conf
 #spark-env.sh 환경변수 작성
 vi /home/user/spark-2.2.1-bin-hadoop2.7/conf/spark-env.sh
 -----------------------------------------------------------------------------------------------
+export SPARK_HOME=/home/user/spark-2.2.1-bin-hadoop2.7
 export MESOS_NATIVE_JAVA_LIBRARY=/usr/local/lib/libmesos.so
 export SPARK_EXECUTOR_URI=hdfs://mycluster/spark-2.2.1-bin-hadoop2.7.tgz
 -----------------------------------------------------------------------------------------------
