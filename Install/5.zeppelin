@@ -1,0 +1,54 @@
+
+
+spark1번 서버에 제플린 설치하고
+su  -  user 
+
+wget http://10.10.63.63:8089/zeppelin-0.7.3-bin-all.tgz
+
+tar -zxf zeppelin-0.7.3-bin-all.tgz
+
+mv zeppelin-0.7.3-bin-all zeppelin
+
+cd  /home/user/zeppelin/conf
+
+cp  /home/user/zeppelin/conf/zeppelin-site.xml.template /home/user/zeppelin/conf/zeppelin-site.xml
+
+vi /home/user/zeppelin/conf/zeppelin-site.xml
+-------------------------------------------------------
+<property>
+  <name>zeppelin.server.port</name>
+  <value>8080</value>
+  <description>Server port.</description>
+</property>
+-------------------------------------------------------
+
+cp /home/user/zeppelin/conf/zeppelin-env.sh.template  /home/user/zeppelin/conf/zeppelin-env.sh
+vi  /home/user/zeppelin/conf/zeppelin-env.sh
+-------------------------------------------------------
+export JAVA_HOME=/opt/jdk1.8.0_131
+export SPARK_HOME=/home/user/spark-2.2.1-bin-hadoop2.7
+export MESOS_NATIVE_JAVA_LIBRARY=/usr/local/lib/libmesos.so 
+export SPARK_EXECUTOR_URI=hdfs://mycluster/spark-2.2.1-bin-hadoop2.7.tgz
+export ZEPPELIN_JAVA_OPTS="-Dspark.executor.uri=$SPARK_EXECUTOR_URI"
+-------------------------------------------------------
+
+/home/user/zeppelin/bin/zeppelin-daemon.sh start
+/home/user/zeppelin/bin//zeppelin-daemon.sh stop
+
+
+
+
+vi zepplin-env.sh
+---------------------------------------------------------------------
+export SPARK_HOME=/home/user/spark-2.2.1-bin-hadoop2.7
+export PYSPARK_PYTHON=/usr/local/bin/python2
+export PYTHONPATH=${SPARK_HOME}/python:${SPARK_HOME}/python/lib/py4j-0.10.4-src.zip:${PYTHONPATH}
+export SPARK_YARN_USER_ENV="PYTHONPATH=${PYTHONPATH}"
+---------------------------------------------------------------------
+
+
+
+
+
+
+
