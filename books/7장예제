@@ -291,6 +291,9 @@ myals.explainParams()
 #파이프라인 객체를 생성하고 생성된  als 모델을 파이프라인의 한단계로 설정
 from pyspark.ml import Pipeline
 
+ 
+
+
 pipeline = Pipeline(stages=[myals])
 
 type(pipeline)
@@ -333,21 +336,13 @@ preds.show()
 evaluator = RegressionEvaluator(metricName="rmse", labelCol="rating", predictionCol="prediction")
 
 RMSE = evaluator.evaluate(preds)
-
 RMSE
 
 print("Root-mean-square error = " + str(RMSE))
-
-
-
-
 
 evaluator = RegressionEvaluator(metricName="rmse", labelCol="rating", predictionCol="prediction")
 
 rmse = evaluator.evaluate(preds)
 
 rmse
-
-
-
 
