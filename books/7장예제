@@ -27,16 +27,18 @@ type(data)
 #데이터건수 확인
 data.count()
 
+#원본 데이터 확인(ID,제품번호,평가등급,날짜)
+data.take(5)
 
 #MLlib 추천모듈에서 ALS, 행렬인수분해, rating함수 기능을 로드한다.
 from pyspark.mllib.recommendation import ALS, MatrixFactorizationModel, Rating
 
-
-#RDD "data"에서 열구분자 ","를 이용하여 4개의 열중 앞에서 부터 3개의 열만 가져온다.
+#RDD "data"에서 열구분자 ","를 이용하여 4개의 열중 앞에서 부터 3개의 열만 가져온다. (날짜를 버린다)
 ratings = data.map(lambda l: l.split(',')).map(lambda l: Rating(int(l[0]), int(l[1]), float(l[2])))
 
 
 #데이터객체는 원본 RDD인 "data"에서 변환된 것으로 PipelinedRDD로 표기된다.
+type(data)
 type(ratings)
 
 
@@ -48,25 +50,34 @@ ratings.take(5)
 # 데이터 탐색
 ################
 
-#RDD "ratings"을 가지고 DataFrame 생성한다.
+#날짜를 버린 "ratings"을 가지고 DataFrame 생성한다.
 df = sqlContext.createDataFrame(ratings)
 
-
+#전체 사용자 수
 df.select('user').distinct().count()
+
+#사용자 5명 표시
 df.select('user').distinct().show(5)
 
-
+#전체 제품 수
 df.select('product').distinct().count()
+
+#제품 5 개 표시
 df.select('product').distinct().show(5)
 
-
-df.groupBy("user").count().take(5)
+#각 등급별 건수
 df.groupBy("rating").count().show()
 
+#각 사용자별 건수(=제품+등급 수) 5개 표시
+df.groupBy("user").count().take(5)
 
+#디폴트로 20개만 표시
+df.groupBy("user").count().show()
+df.groupBy("user").count().show(50)
 
-#사용자별 등급평가통계
+#각 사용자별 건수(=제품+등급 수)의 통계
 df.groupBy("user").count().select('count').describe().show() 
+
 
 
 #사용자별등급평가에 대한 개별 횟수
