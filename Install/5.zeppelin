@@ -8,10 +8,6 @@ ex) mesos://zk://zk1:2181,zk2:2181,zk3:2181/mesos
 
 그렇다보니 mesos서버 3대 모두에 제플린을 설치함
 
-
-
-
-
 #압축풀기
 su  -  user 
 wget http://10.10.63.63:8089/zeppelin-0.7.3-bin-all.tgz
@@ -62,6 +58,9 @@ anonymous > interpreter > spark 검색 > edit > master 주소 변경 > save > re
 
 변경 전 : local[*]
 변경 후 : mesos://zk://zk1:2181,zk2:2181,zk3:2181/mesos
+
+그리고 spark.app.name  값은 Zeppelin1, Zeppelin2, Zeppelin3 으로 각 서버 마다 다르게 작성한다
+
 
 #SPARK 타입의 신규 app에서 spark 기동
 홈 > Create new note > test for spark > 작성
