@@ -30,6 +30,10 @@ export SPARK_HOME=/home/user/spark-2.2.1-bin-hadoop2.7
 export MESOS_NATIVE_JAVA_LIBRARY=/usr/local/lib/libmesos.so 
 export SPARK_EXECUTOR_URI=hdfs://mycluster/spark-2.2.1-bin-hadoop2.7.tgz
 export ZEPPELIN_JAVA_OPTS="-Dspark.executor.uri=$SPARK_EXECUTOR_URI"
+export SPARK_HOME=/home/user/spark-2.2.1-bin-hadoop2.7
+export PYSPARK_PYTHON=/usr/local/bin/python2
+export PYTHONPATH=${SPARK_HOME}/python:${SPARK_HOME}/python/lib/py4j-0.10.4-src.zip:${PYTHONPATH}
+export SPARK_YARN_USER_ENV="PYTHONPATH=${PYTHONPATH}"
 -------------------------------------------------------
 
 /home/user/zeppelin/bin/zeppelin-daemon.sh start
@@ -38,13 +42,6 @@ export ZEPPELIN_JAVA_OPTS="-Dspark.executor.uri=$SPARK_EXECUTOR_URI"
 
 
 
-vi zepplin-env.sh
----------------------------------------------------------------------
-export SPARK_HOME=/home/user/spark-2.2.1-bin-hadoop2.7
-export PYSPARK_PYTHON=/usr/local/bin/python2
-export PYTHONPATH=${SPARK_HOME}/python:${SPARK_HOME}/python/lib/py4j-0.10.4-src.zip:${PYTHONPATH}
-export SPARK_YARN_USER_ENV="PYTHONPATH=${PYTHONPATH}"
----------------------------------------------------------------------
 
 
 
