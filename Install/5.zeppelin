@@ -1,43 +1,84 @@
 
 
-spark1번 서버에 제플린 설치하고
+제플린 로컬에 하둡, SPARK, 파이썬이 설치되어있어야 하고 
+인터프리터 spark 설정에서  master를 local[*] 대신에 mesos 마스터 서버를 지정해 줘야함.
+
+mesos 마스터가 3대 HA 구성이므로 주키퍼 주소로 지정해주면 됨
+ex) mesos://zk://zk1:2181,zk2:2181,zk3:2181/mesos
+
+그렇다보니 mesos서버 3대 모두에 제플린을 설치함
+
+
+
+
+
+#압축풀기
 su  -  user 
-
 wget http://10.10.63.63:8089/zeppelin-0.7.3-bin-all.tgz
-
 tar -zxf zeppelin-0.7.3-bin-all.tgz
 
 mv zeppelin-0.7.3-bin-all zeppelin
-
 cd  /home/user/zeppelin/conf
 
+#리슨포트 재지정
 cp  /home/user/zeppelin/conf/zeppelin-site.xml.template /home/user/zeppelin/conf/zeppelin-site.xml
-
 vi /home/user/zeppelin/conf/zeppelin-site.xml
 -------------------------------------------------------
 <property>
   <name>zeppelin.server.port</name>
-  <value>8080</value>
+  <value>8888</value>
   <description>Server port.</description>
 </property>
 -------------------------------------------------------
 
+#환경변수설정
 cp /home/user/zeppelin/conf/zeppelin-env.sh.template  /home/user/zeppelin/conf/zeppelin-env.sh
-vi  /home/user/zeppelin/conf/zeppelin-env.sh
--------------------------------------------------------
+vi /home/user/zeppelin/conf/zeppelin-env.sh
+--------------------------------------------------------------------------------------
 export JAVA_HOME=/opt/jdk1.8.0_131
 export SPARK_HOME=/home/user/spark-2.2.1-bin-hadoop2.7
-export MESOS_NATIVE_JAVA_LIBRARY=/usr/local/lib/libmesos.so 
+export MESOS_NATIVE_JAVA_LIBRARY=/usr/local/lib/libmesos.so
 export SPARK_EXECUTOR_URI=hdfs://mycluster/spark-2.2.1-bin-hadoop2.7.tgz
 export ZEPPELIN_JAVA_OPTS="-Dspark.executor.uri=$SPARK_EXECUTOR_URI"
+
 export SPARK_HOME=/home/user/spark-2.2.1-bin-hadoop2.7
 export PYSPARK_PYTHON=/usr/local/bin/python2
 export PYTHONPATH=${SPARK_HOME}/python:${SPARK_HOME}/python/lib/py4j-0.10.4-src.zip:${PYTHONPATH}
 export SPARK_YARN_USER_ENV="PYTHONPATH=${PYTHONPATH}"
--------------------------------------------------------
+--------------------------------------------------------------------------------------
 
+#서비스기동
 /home/user/zeppelin/bin/zeppelin-daemon.sh start
 /home/user/zeppelin/bin//zeppelin-daemon.sh stop
+
+
+#URL접속
+http://mesos1:8888
+http://mesos1:8888
+http://mesos1:8888
+
+#인터프리터 SPARK 설정
+anonymous > interpreter > spark 검색 > edit > master 주소 변경 > save > restart
+
+변경 전 : local[*]
+변경 후 : mesos://zk://zk1:2181,zk2:2181,zk3:2181/mesos
+
+#SPARK 타입의 신규 app에서 spark 기동
+홈 > Create new note > test for spark > 작성
+%spark
+val a = 1
+입력 후  RUN
+
+# %spark 테스트
+mesos 클러스터 화면에서 제플린을 통해 SPARK 프레임웍이 구동되었는지 확인
+http://mesos1:5050
+http://mesos2:5050
+http://mesos3:5050
+
+# %python 테스트
+홈 > 필터 "python" 입력 >  Zeppelin Tutorial/Matplotlib (Python • PySpark) > SAVA > Run All para.... (중요!!!)
+
+이제 개별 app 단위로 파이썬 실행해보면 된다.
 
 
 
