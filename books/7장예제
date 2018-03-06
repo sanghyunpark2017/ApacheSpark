@@ -53,63 +53,63 @@ ratings.take(5)
 #날짜를 버린 "ratings"을 가지고 DataFrame 생성한다.
 df = sqlContext.createDataFrame(ratings)
 
-#전체 사용자 수
+#사용자/제품/평가등급 전체 건수
 df.select('user').distinct().count()
-
-#사용자 5명 표시
-df.select('user').distinct().show(5)
-
-#전체 제품 수
 df.select('product').distinct().count()
+df.select('rating').distinct().count()
 
-#제품 5 개 표시
-df.select('product').distinct().show(5)
 
-#각 등급별 건수
+#사용자/제품/평가등급 표시(15개)
+df.select('user').distinct().show(15)
+df.select('product').distinct().show(15)
+df.select('rating').distinct().show(15)
+
+
+#사용자/제품/평가등급 별 건수
+df.groupBy("user").count().show()
+df.groupBy("product").count().show()
 df.groupBy("rating").count().show()
 
-#각 사용자별 건수(=제품+등급 수) 5개 표시
-df.groupBy("user").count().take(5)
 
-#디폴트로 20개만 표시
-df.groupBy("user").count().show()
-df.groupBy("user").count().show(50)
-
-#각 사용자별 건수(=제품+등급 수)의 통계
-df.groupBy("user").count().select('count').describe().show() 
+#사용자/제품/평가등급 별 통계
+df.groupBy("user").count().select('count').describe().show()
+df.groupBy("product").count().select('count').describe().show()
+df.groupBy("rating").count().select('count').describe().show()
 
 
 
-#사용자별등급평가에 대한 개별 횟수
-df.stat.crosstab("user", "rating").show() 
+#행/열 건수
+df.stat.crosstab("user", "rating").show()
+df.stat.crosstab("product", "rating").show()
+df.stat.crosstab("rating", "user").show()
 
 
-#각 사용자별 평균 등급값
+#사용자별 매긴 등급 평균/최대/최소
 df.groupBy('user').agg({'rating': 'mean'}).take(5)
+df.groupBy('user').agg({'rating': 'max'}).take(5)
+df.groupBy('user').agg({'rating': 'min'}).take(5)
+df.groupBy('user').agg({'rating': 'count'}).take(5)
 
 
-#영화별 평균 등급값
+#제품별 매겨진 등급 평균/최대/최소
 df.groupBy('product').agg({'rating': 'mean'}).take(5)
-
+df.groupBy('product').agg({'rating': 'max'}).take(5)
+df.groupBy('product').agg({'rating': 'min'}).take(5)
+df.groupBy('product').agg({'rating': 'count'}).take(5)
 
 
 
 ################################################################
-# 파이썬 numpy 과학패키지와 matplotlib 시각화패키지
+# 파이썬 시각화
 ################################################################
 
 #X윈도우 위에서 구동해야할 듯
 #쉘시작전에 디스플레이 설정 필요함 export MPLBACKEND="agg"
 
-
 import numpy as np
-
 import matplotlib as mpl
-
 mpl.use('agg')
-
 import matplotlib.pyplot as plt
-
 
 n_groups = 5
 x = df.groupBy("rating").count().select('count')
@@ -167,15 +167,25 @@ model = ALS.train(training, rank, numIterations)
 #Matrixfactorizationsmodel 객체가 생성되었는지 확인
 type(model)
 
+#원본(training) 에서 2개 가져와 봄
+training.take(2)
 
 
-#예측메소드 predict()를 사용해서 사용자(196) 및 영화(242)를 예측해본다.
+#예측메소드 predict()를 사용
 model.predict(196, 242)
+model.predict(22, 377)
 
+4.1414...
+1.1248...
 
-#학습에 사용한 원본(training) 보다 높게 표시되는 것을 확인할 수 있다.
-training.take(1)
+#또 다른 것
+model.predict(94, 160)
+model.predict(586, 160)
+model.predict(297, 160)
 
+4.3476...
+3.2731...
+3.2665...
 
 
 #test 데이터셋트에서 2개(user, product) 열만 가져와서 새로운 파이프라인RDD "testdata"를 생성한다
@@ -192,6 +202,10 @@ predictions = model.predictAll(testdata).map(lambda r: ((r[0], r[1]), r[2]))
 
 #첫 예측 다섯 개 표시
 predictions.take(5)
+
+model.predict(94, 160)
+model.predict(586, 160)
+model.predict(297, 160)
 
 
 
@@ -225,16 +239,19 @@ recommedItemsToUsers.take(2)
 ratesAndPreds = ratings.map(lambda r: ((r[0], r[1]), r[2])).join(predictions)
 
 
-#평균 제곱 오차 계산
+#평균제곱오차(MSE:Mean Squared Error) 계산
 MSE = ratesAndPreds.map(lambda r: (r[1][0] - r[1][1])**2).mean()
 MSE
 
+1.171170...
+
+#평균제곱근오차(Root Mean Square Error; RMSE)
 from math import sqrt
 rmse = sqrt(MSE)
-
 rmse
 
-=> 1.0709472745788766 의 수치가 의미하는 것
+1.082206...
+
 
 ################################################################
 # 모델 선택 및 하이퍼 매개변수 튜닝
@@ -255,9 +272,6 @@ df.show()
 
 #파라미터 tuningmodel을 실행하기 위해 필요한 모듈을 로드한다.
 from pyspark.ml.recommendation import ALS
-
-
-
 
 
 #학습데이터의 열값만을 사용한다.
@@ -310,11 +324,6 @@ cvExplicit = CrossValidator(estimator=myals, estimatorParamMaps=grid, evaluator=
 #fit() 메소드를 사용해 모델 생성
 
 cvModel = cvExplicit.fit(training)
-
-
-
-
-
 
 
 preds = cvModel.bestModel.transform(test)
