@@ -7,7 +7,8 @@
 
 su - user
 export MPLBACKEND="agg"
-/home/user/spark-2.2.1-bin-hadoop2.7/bin/pyspark
+/home/user/spark-2.2.1-bin-hadoop2.7/bin/pyspark  --driver-memory 6g 
+
 
 
 #대화형 액세스 지점을 생성한다.
@@ -16,7 +17,8 @@ export MPLBACKEND="agg"
 spark = SparkSession.builder.appName("recommendationEngine").config("spark.some.config.option", "some-value").getOrCreate()
 
 
-#RDD "data" 생성
+#RDD(Resilient Distributed DataSet) "data" 생성
+#변경이 불가하고 서로 다른 노드에서 분리 되어 실행 될 수 있는 구조를 갖는다
 data = sc.textFile("/udata.csv")
 
 
@@ -30,12 +32,21 @@ data.count()
 #원본 데이터 확인(ID,제품번호,평가등급,날짜)
 data.take(5)
 
+#CF알고리즘 예제로써 아이템에 대한 사용자의 평가 데이터를 가지고 행렬을 구성하여 유사도 계산
+#행렬이 거대하여 행렬인수분해 사용 할 것이며 => MatrixFactorizationModel
+#
+
+#Matrix Factorization 모델 이용
 #MLlib 추천모듈에서 ALS, 행렬인수분해, rating함수 기능을 로드한다.
+#ALS(Alternating Least Squares) 추천 알고리즘
 from pyspark.mllib.recommendation import ALS, MatrixFactorizationModel, Rating
 
-#RDD "data"에서 열구분자 ","를 이용하여 4개의 열중 앞에서 부터 3개의 열만 가져온다. (날짜를 버린다)
-ratings = data.map(lambda l: l.split(',')).map(lambda l: Rating(int(l[0]), int(l[1]), float(l[2])))
+#Rating함수
+#public Rating(int user, int product, double rating)
 
+#RDD "data"에서 열구분자 ","를 알려주고 Rating 함수를 이용하여 새로운 데이터셋 "ratings"을 만든다
+#이 떄 마지막열인 날짜를 버린다
+ratings = data.map(lambda l: l.split(',')).map(lambda l: Rating(int(l[0]), int(l[1]), float(l[2])))
 
 #데이터객체는 원본 RDD인 "data"에서 변환된 것으로 PipelinedRDD로 표기된다.
 type(data)
@@ -81,7 +92,7 @@ df.groupBy("rating").count().select('count').describe().show()
 #행/열 건수
 df.stat.crosstab("user", "rating").show()
 df.stat.crosstab("product", "rating").show()
-df.stat.crosstab("rating", "user").show()
+df.stat.crosstab("user", "product").show()
 
 
 #사용자별 매긴 등급 평균/최대/최소
@@ -96,6 +107,7 @@ df.groupBy('product').agg({'rating': 'mean'}).take(5)
 df.groupBy('product').agg({'rating': 'max'}).take(5)
 df.groupBy('product').agg({'rating': 'min'}).take(5)
 df.groupBy('product').agg({'rating': 'count'}).take(5)
+
 
 
 
@@ -133,9 +145,7 @@ plt.tight_layout()
 # 기본 추천엔진 만들기
 ################################################################
 
-#예측메소드 predict() 실행 시 오류가 발생하면 spark 바이너리 대신 소스 컴파일해야 하며,
-#빌드 시 maven에 "-Pnetlib-lgpl" 옵셥을 줘야 한다.
-#http://www.spark.tc/blas-libraries-in-mllib/
+
 
 
 #데이터셋 ratings를 randomSplist() 메소드를 사용해 무작위로 8:2 비율로 학습데이터집합과 테스트데이터집합으로 쪼갠다.
