@@ -1,6 +1,7 @@
 
-
-
+#./pyspark --master spark://host:port
+#./pyspark --master mesos://host:port
+#./pyspark --master mesos://zk://zk1:2181,zk3:2181,zk3:2181/mesos
 ./pyspark
 
 
