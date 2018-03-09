@@ -2,7 +2,8 @@
 #./pyspark --master spark://host:port
 #./pyspark --master mesos://host:port
 #./pyspark --master mesos://zk://zk1:2181,zk3:2181,zk3:2181/mesos
-./pyspark
+./pyspark --executor-memory 5G
+
 
 
 #Get the data here http://grouplens.org/datasets/movielens/
