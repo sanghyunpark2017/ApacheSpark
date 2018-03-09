@@ -3,64 +3,27 @@
 SPARK의 머신러닝 알고리즘 중 추천 시스템 관련
 ###########################################
 
+#./pyspark --master spark://host:port
+#./pyspark --master mesos://host:port
+#./pyspark --master mesos://zk://zk1:2181,zk3:2181,zk3:2181/mesos 
+./pyspark --executor-memory 5G
 
-#파이썬쉘 실행하기 전에 디스플레이 설정
-#파이썬쉘 실행
-
-su - user
-export MPLBACKEND="agg"
-/home/user/spark-2.2.1-bin-hadoop2.7/bin/pyspark
-
-#대화형 액세스 지점 생성
-#이전 버전에서는 SparkConf, SparkContext, SQLContxt를 사용하여 스파크와 상호작용했지만
-#SPARK 2.0 부터는 SparkConf, SparkContext를 자동으로 캡슐화해 SparkSession이 처리할 수 있다.
 spark = SparkSession.builder.appName("recommendationEngine").config("spark.some.config.option", "some-value").getOrCreate()
 
-#RDD(Resilient Distributed DataSet) "data" 생성
-#변경이 불가하고 서로 다른 노드에서 분리 되어 실행 될 수 있는 구조를 갖는다
 data = sc.textFile("/udata.csv")
-
-
-#데이터객체의 형태가 RDD임
-type(data)
-
-
-#데이터건수 확인
 data.count()
-
-#원본 데이터 확인(ID,제품번호,평가등급,날짜)
 data.take(5)
 
-#원본 데이터는 아이템에 대한 사용자의 평가(1~5)를 가지는 단순한 형태
--CF알고리즘(데이터를 행렬로 구성하여 유사도 계산)
--Matrix Factorization 모델
--ALS(Alternating Least Squares) 알고리즘
- : user벡터와 item벡터의 곱이 rating에 근접하도록 각 user와 item에 대한 feature vector를 정의 하는 것으로 동작
- 
- 
- ex) Cllaborative Filtering for the Implicit Feedback Datasets, Large-scale Parallel Collaborative Filtering for the Netflix Prize
-
-#Spark mllib.recommendation 모듈에서 ALS, 행렬인수분해, rating함수 기능을 로드한다.
 from pyspark.mllib.recommendation import ALS, MatrixFactorizationModel, Rating
 
-#ALS를 동작시키기 위해서 "data"에서 열구분자 ","로 구분한 후 Rating 함수를 이용하여 새로운 데이터셋 "ratings"을 만든다
-#public Rating(int user, int product, double rating)
-#이 떄 마지막열인 날짜를 버린다
 ratings = data.map(lambda l: l.split(',')).map(lambda l: Rating(int(l[0]), int(l[1]), float(l[2])))
 
-
-#데이터객체는 원본 RDD인 "data"에서 변환된 것으로 PipelinedRDD로 표기된다.
-type(data)
-type(ratings)
-
-
-#처음 5개 데이터를 가져온다
 ratings.take(5)
 
 
-################
+###########################################
 # 데이터 탐색
-################
+###########################################
 
 #날짜를 버린 "ratings"을 가지고 DataFrame 생성한다.
 df = sqlContext.createDataFrame(ratings)
