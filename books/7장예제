@@ -109,14 +109,7 @@ plt.tight_layout()
 # 기본 추천엔진 만들기
 ################################################################
 
-
-#데이터셋 ratings를 randomSplist() 메소드를 사용해 무작위로 8:2 비율로 학습데이터집합과 테스트데이터집합으로 쪼갠다.
-#원본데이터 : ratings
-#학습데이터 : training
-#테스트데이터 : test
-
 (training, test) = ratings.randomSplit([0.8, 0.2])
-
 
 ratings.count()
 training.count()
@@ -125,29 +118,23 @@ test.count()
 training.cache()
 test.cache()
 
-
-#사용할 feature vector의 size 10(default)
-#값을 올리면 더 나은 모델을 만들수 있지만 계산 비용이 올라가고 오히려 prediction err가 증가할 수 있음,최적화필요
 rank = 10
-
-#반복 실행 횟수는 10
 numIterations = 10
 
-
-#앞서 쪼갠 training 데이터를 가지고 모델생성
 model = ALS.train(training, rank, numIterations)
 
-#Matrixfactorizationsmodel 객체가 생성되었는지 확인
 type(model)
 
+
+################################################################
+# 유형A
+################################################################
 
 #Examine the latent features for one user
 model.userFeatures().first()
 
-
 #Examine the latent features for one product
 model.productFeatures().first()
-
 
 # For Product X, Find N Users to Sell To
 model.recommendUsers(242,50)
@@ -157,7 +144,6 @@ model.recommendProducts(196,10)
 
 #Predict Single Product for Single User
 model.predict(196, 242)
-
 
 # Predict Multi Users and Multi Products
 # Pre-Processing
@@ -179,27 +165,34 @@ true_pred = true_reorg.join(pred_reorg)
 from math import sqrt
 
 MSE = true_pred.map(lambda r: (r[1][0] - r[1][1])**2).mean()
+MSE
+
+#Results in 0.7629908117414474
 RMSE = sqrt(MSE)      
-RMSE    #Results in 0.7629908117414474
+RMSE
+
 
 
 ##Test Set Evaluation
 test_input = test.map(lambda x:(x[0],x[1])) 
 pred_test = model.predictAll(test_input)
+
 test_reorg = test.map(lambda x:((x[0],x[1]), x[2]))
 pred_reorg = pred_test.map(lambda x:((x[0],x[1]), x[2]))
+
 test_pred = test_reorg.join(pred_reorg)
+
 test_MSE = test_pred.map(lambda r: (r[1][0] - r[1][1])**2).mean()
+test_MSE
+
+#1.0930640864533627
 test_RMSE = sqrt(test_MSE)   
-test_RMSE    #1.0145549956596238
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-http://www.learnbymarketing.com/644/recsys-pyspark-als/
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+test_RMSE
 
 
-
-
+################################################################
+# 유형B
+################################################################
 
 
 #원본(training) 에서 2개 가져와 봄
@@ -210,54 +203,33 @@ training.take(2)
 model.predict(196, 242)
 model.predict(22, 377)
 
-4.1414...
-1.1248...
+3.55..
+1.15..
 
 #또 다른 것
 model.predict(94, 160)
 model.predict(586, 160)
 model.predict(297, 160)
 
-4.3476...
-3.2731...
-3.2665...
+4.72..
+2.91..
+3.75..
 
 
-#test 데이터셋트에서 2개(user, product) 열만 가져와서 새로운 파이프라인RDD "testdata"를 생성한다
 testdata = test.map(lambda p: (p[0], p[1]))
-
-
-#열이 3개에서 2개로 줄었다.
-testdata.take(5)
-
- 
-#데이터셋 "testdata"의 모든 예측 값을 계산한다.
 predictions = model.predictAll(testdata).map(lambda r: ((r[0], r[1]), r[2]))
-
-
-#첫 예측 다섯 개 표시
 predictions.take(5)
-
-model.predict(94, 160)
-model.predict(586, 160)
-model.predict(297, 160)
-
 
 
 ################################################################
 # 사용자 기반 협업 필터링
 ################################################################
 
-사용자에게 상위 N개 추천항목을 권유한다.
-
-
 #유저당 상위 10개 권장항목을 만들 것이라는 메소드를 만든다.
 recommedItemsToUsers = model.recommendProductsForUsers(10)
 
-
 #유저당 상위 10개 권장항목을 생성한다.
 recommedItemsToUsers.count()
-
 
 #앞부분 2명의 사용자에 대한 추천사항을 본다
 recommedItemsToUsers.take(2)
