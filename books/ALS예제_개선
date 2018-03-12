@@ -1,0 +1,336 @@
+
+#####################################
+Start
+#####################################
+
+#모델링을 위한 일부데이터(2MB)와 전체데이터(700MB) 다운로드
+#file download
+#complete_dataset_url = 'http://files.grouplens.org/datasets/movielens/ml-latest.zip'
+#small_dataset_url = 'http://files.grouplens.org/datasets/movielens/ml-latest-small.zip'
+
+/home/user/spark-2.2.1-bin-hadoop2.7/bin/pyspark --executor-memory 6GB
+
+
+#####################################
+Loading and parsing datasets
+#####################################
+
+
+small_ratings_raw_data = sc.textFile("/ratings_2MB.csv")
+small_ratings_raw_data_header = small_ratings_raw_data.take(1)[0]
+
+small_ratings_data = small_ratings_raw_data.filter(lambda line: line!=small_ratings_raw_data_header)\
+    .map(lambda line: line.split(",")).map(lambda tokens: (tokens[0],tokens[1],tokens[2])).cache()
+
+small_ratings_data.take(3)
+
+
+
+
+small_movies_raw_data = sc.textFile("/movies_small.csv")
+small_movies_raw_data_header = small_movies_raw_data.take(1)[0]
+
+small_movies_data = small_movies_raw_data.filter(lambda line: line!=small_movies_raw_data_header)\
+    .map(lambda line: line.split(",")).map(lambda tokens: (tokens[0],tokens[1])).cache()
+    
+small_movies_data.take(3)
+
+
+
+##########################################################################
+Selecting ALS parameters using the small dataset
+##########################################################################
+
+#샘플데이터를 6:2:2로 쪼갠 후 두번째 비율 2의 데이터를 가지고 모델검증/비교를 통해 최적의 rank 값 산정
+training_RDD, validation_RDD, test_RDD = small_ratings_data.randomSplit([6, 2, 2], seed=0L)
+validation_for_predict_RDD = validation_RDD.map(lambda x: (x[0], x[1]))
+test_for_predict_RDD = test_RDD.map(lambda x: (x[0], x[1]))
+
+
+from pyspark.mllib.recommendation import ALS
+import math
+
+seed = 5L
+iterations = 10
+regularization_parameter = 0.1
+ranks = [4, 8, 12]
+errors = [0, 0, 0]
+err = 0
+tolerance = 0.02
+
+min_error = float('inf')
+best_rank = -1
+best_iteration = -1
+
+for rank in ranks:
+    model = ALS.train(training_RDD, rank, seed=seed, iterations=iterations,
+                      lambda_=regularization_parameter)
+    predictions = model.predictAll(validation_for_predict_RDD).map(lambda r: ((r[0], r[1]), r[2]))
+    rates_and_preds = validation_RDD.map(lambda r: ((int(r[0]), int(r[1])), float(r[2]))).join(predictions)
+    error = math.sqrt(rates_and_preds.map(lambda r: (r[1][0] - r[1][1])**2).mean())
+    errors[err] = error
+    err += 1
+    print 'For rank %s the RMSE is %s' % (rank, error)
+    if error < min_error:
+        min_error = error
+        best_rank = rank
+
+
+#RMSE
+min_error
+
+
+print 'The best model was trained with rank %s' % best_rank
+
+predictions.take(3)
+
+rates_and_preds.take(3)
+
+
+
+#최적의 rank를 마지막 2비율 데이터에 적용 후 RMSE 계산해 봄
+#Finally we test the selected model.
+
+model = ALS.train(training_RDD, best_rank, seed=seed, iterations=iterations,
+                      lambda_=regularization_parameter)
+predictions = model.predictAll(test_for_predict_RDD).map(lambda r: ((r[0], r[1]), r[2]))
+rates_and_preds = test_RDD.map(lambda r: ((int(r[0]), int(r[1])), float(r[2]))).join(predictions)
+error = math.sqrt(rates_and_preds.map(lambda r: (r[1][0] - r[1][1])**2).mean())
+    
+print 'For testing data the RMSE is %s' % (error)
+
+
+
+##########################################################################
+Using the complete dataset to build the final model
+##########################################################################
+# Load the complete dataset file
+#complete_ratings_file = os.path.join(datasets_path, 'ml-latest', 'ratings.csv')
+#complete_ratings_raw_data = sc.textFile(complete_ratings_file)
+
+
+
+#원본데이터 전체를 로딩해서 앞서 산정한 best_rank를 적용한다
+complete_ratings_raw_data = sc.textFile("/ratings_700MB.csv")
+complete_ratings_raw_data_header = complete_ratings_raw_data.take(1)[0]
+
+
+# Parse
+complete_ratings_data = complete_ratings_raw_data.filter(lambda line: line!=complete_ratings_raw_data_header)\
+    .map(lambda line: line.split(",")).map(lambda tokens: (int(tokens[0]),int(tokens[1]),float(tokens[2]))).cache()
+    
+print "There are %s recommendations in the complete dataset" % (complete_ratings_data.count())
+
+
+#원본데이터를 7:3으로 쪼갠후 7에 대해서 모델생성
+#Now we are ready to train the recommender model.
+training_RDD, test_RDD = complete_ratings_data.randomSplit([7, 3], seed=0L)
+
+complete_model = ALS.train(training_RDD, best_rank, seed=seed, 
+                           iterations=iterations, lambda_=regularization_parameter)
+
+
+#원본 3에 대해 모델검증함
+#Now we test on our testing set.
+test_for_predict_RDD = test_RDD.map(lambda x: (x[0], x[1]))
+
+predictions = complete_model.predictAll(test_for_predict_RDD).map(lambda r: ((r[0], r[1]), r[2]))
+rates_and_preds = test_RDD.map(lambda r: ((int(r[0]), int(r[1])), float(r[2]))).join(predictions)
+error = math.sqrt(rates_and_preds.map(lambda r: (r[1][0] - r[1][1])**2).mean())
+    
+print 'For testing data the RMSE is %s' % (error)
+
+#>>For testing data the RMSE is 0.82183583368
+
+
+
+##########################################################################
+How to make recommendations (후반부 refer 용)
+##########################################################################
+
+##########
+#PART1. APP에서 itemID로부터 영화제목과 통계정보 추출하기 위한 예제
+##########
+
+#complete_movies_file = os.path.join(datasets_path, 'ml-latest', 'movies.csv')
+#complete_movies_raw_data = sc.textFile(complete_movies_file)
+
+
+#영화ID/영화제목/영화장르를 가지고 있는 movies 데이터를 가져온다
+complete_movies_raw_data = sc.textFile("/movies_small.csv")
+complete_movies_raw_data_header = complete_movies_raw_data.take(1)[0]
+
+
+#영화ID/영화제목 2개 열만 가지고 complete_movies_titles 로 재구성
+# Parse
+complete_movies_data = complete_movies_raw_data.filter(lambda line: line!=complete_movies_raw_data_header)\
+    .map(lambda line: line.split(",")).map(lambda tokens: (int(tokens[0]),tokens[1],tokens[2])).cache()
+
+complete_movies_titles = complete_movies_data.map(lambda x: (int(x[0]),x[1]))
+
+print "There are %s movies in the complete dataset" % (complete_movies_titles.count())
+
+
+#>> There are 45843 movies in the complete dataset
+
+
+##########
+#PART2. UserDefined Function(함수사용 사례)
+##########
+
+
+#영화별로 평점의 총 건수와 평점평균을 리턴하는 함수를 만든 후 평가르 매겨진 영화들에 대한 집계를 한다.
+
+#사용자 함수정의
+def get_counts_and_averages(ID_and_ratings_tuple):
+    nratings = len(ID_and_ratings_tuple[1])
+    return ID_and_ratings_tuple[0], (nratings, float(sum(x for x in ID_and_ratings_tuple[1]))/nratings)
+
+
+#영화ID와 RANK 2개의 데이터만 가지고 영화ID에 대한 groupByKey를 호출하여 
+#집계(건수,평균,최소,최대)를 계산하여 결과를 movie_ID_with_ratings_RDD에 넣는다.
+#예) (28878, <pyspark.resultiterable.... object at 0x...>) -> 집계(건수, 평균, 최소, 최대)는 object 형태로 들어감
+movie_ID_with_ratings_RDD = (complete_ratings_data.map(lambda x: (x[1], x[2])).groupByKey())
+movie_ID_with_ratings_RDD.count()
+
+
+#집계 object로 부터 건수와 평균을 가져온다(사용자 정의함수로 부터 계산)
+#예) (2, (107, 3.4018)) ->  영화 2에 대한 평가는 107건이고, 그 평점의 평균이 3.4018이다
+movie_ID_with_avg_ratings_RDD = movie_ID_with_ratings_RDD.map(get_counts_and_averages)
+movie_ID_with_avg_ratings_RDD.take(10)
+
+
+#위에서 건수만 가져온다. 
+#예) (2, 107) -> 영화 2에 대한 평가는 107건
+movie_rating_counts_RDD = movie_ID_with_avg_ratings_RDD.map(lambda x: (x[0], x[1][0]))
+movie_rating_counts_RDD.take(10)
+
+
+
+
+##########################################################################
+Adding new user ratings
+##########################################################################
+
+#약 2천만건의 전체 데이터 complete_ratings_data에 UserID "0"으로 추가 10건 입력(병합) 후 전체 재계산해보고
+#그래 오래 걸리는 시간이 아닌 것으로 이 테스트를 통해서 배치실행 주기를 어떻게 할지 가늠 할 수 있다.
+
+new_user_ID = 0
+
+# The format of each line is (userID, movieID, rating)
+new_user_ratings = [
+     (0,260,4), # Star Wars (1977)
+     (0,1,3), # Toy Story (1995)
+     (0,16,3), # Casino (1995)
+     (0,25,4), # Leaving Las Vegas (1995)
+     (0,32,4), # Twelve Monkeys (a.k.a. 12 Monkeys) (1995)
+     (0,335,1), # Flintstones, The (1994)
+     (0,379,1), # Timecop (1994)
+     (0,296,3), # Pulp Fiction (1994)
+     (0,858,5) , # Godfather, The (1972)
+     (0,50,4) # Usual Suspects, The (1995)
+    ]
+new_user_ratings_RDD = sc.parallelize(new_user_ratings)
+print 'New user ratings: %s' % new_user_ratings_RDD.take(10)
+
+new_user_ratings_RDD.count()
+
+
+#Now we add them to the data we will use to train our recommender model. We use Spark's union() transformation for this.
+
+complete_data_with_new_ratings_RDD = complete_ratings_data.union(new_user_ratings_RDD)
+
+
+
+#And finally we train the ALS model using all the parameters we selected before (when using the small dataset).
+
+from time import time
+
+t0 = time()
+new_ratings_model = ALS.train(complete_data_with_new_ratings_RDD, best_rank, seed=seed, 
+                              iterations=iterations, lambda_=regularization_parameter)
+tt = time() - t0
+
+print "New model trained in %s seconds" % round(tt,3)
+
+
+#>>New model trained in 56.61 seconds  (guide document)
+#>>New model trained in 35.96 seconds  
+
+
+
+##########################################################################
+Getting top recommendations
+##########################################################################
+
+#신규유저는 전체 9000여건의 영화 중에 10개를 rank했다.
+#이 10의 rank 데이터를 가지고 나머지 9000여건의 영화 중 추천해봄
+
+
+#앞서 정의했던 userID/ItemID/Rank를 갖는 10개의 배열에서 ItemID 열만 가져다가 new_user_ratings_ids에 넣는다
+# get just movie IDs
+new_user_ratings_ids = map(lambda x: x[1], new_user_ratings)
+
+#영화목록 complete_movies_data에서 위 신규유저가 본 영화가 아닌 것들만 뽑아서 new_user_unrated_movies_RDD 재구성
+#즉, 신규유저가 평가하지 않은 영화만으로 RDD구성 (0, 영화ID)
+# keep just those not on the ID list (thanks Lei Li for spotting the error!)
+new_user_unrated_movies_RDD = (complete_movies_data.filter(lambda x: x[0] not in new_user_ratings_ids).map(lambda x: (new_user_ID, x[0])))
+
+#원본전체 데이터 + 신규유저 "0"의 10건 데이터로 부터 만든 "new_ratings_model" model에 신규유저가 보지 않은 영화를 대입
+#영화 총 건수 9225 개중 10개를 보았으니 9215건에 대해서 예측하는 것임
+# Use the input RDD, new_user_unrated_movies_RDD, with new_ratings_model.predictAll() to predict new ratings for the movies
+new_user_recommendations_RDD = new_ratings_model.predictAll(new_user_unrated_movies_RDD)
+
+
+
+
+
+# Transform new_user_recommendations_RDD into pairs of the form (Movie ID, Predicted Rating)
+new_user_recommendations_rating_RDD = new_user_recommendations_RDD.map(lambda x: (x.product, x.rating))
+new_user_recommendations_rating_title_and_count_RDD = \
+    new_user_recommendations_rating_RDD.join(complete_movies_titles).join(movie_rating_counts_RDD)
+new_user_recommendations_rating_title_and_count_RDD.take(3)
+
+
+#So we need to flat this down a bit in order to have (Title, Rating, Ratings Count).
+
+new_user_recommendations_rating_title_and_count_RDD = \
+    new_user_recommendations_rating_title_and_count_RDD.map(lambda r: (r[1][0][1], r[1][0][0], r[1][1]))
+
+
+#영화제목, 예측평점, 이 영화에 매겨진 평가 건수 리턴
+#Finally, get the highest rated recommendations for the new user, filtering out movies with less than 25 ratings.
+
+top_movies = new_user_recommendations_rating_title_and_count_RDD.filter(lambda r: r[2]>=25).takeOrdered(25, key=lambda x: -x[1])
+
+print ('TOP recommended movies (with more than 25 reviews):\n%s' %
+        '\n'.join(map(str, top_movies)))
+
+
+
+
+##########################################################################
+Getting individual ratings
+##########################################################################
+
+my_movie = sc.parallelize([(0, 500)]) # Quiz Show (1994)
+individual_movie_rating_RDD = new_ratings_model.predictAll(new_user_unrated_movies_RDD)
+individual_movie_rating_RDD.take(1)
+
+
+
+##########################################################################
+Persisting the model(하둡파일시스템 변환 필요)
+##########################################################################
+
+from pyspark.mllib.recommendation import MatrixFactorizationModel
+
+model_path = os.path.join('..', 'models', 'movie_lens_als')
+
+# Save and load model
+model.save(sc, model_path)
+same_model = MatrixFactorizationModel.load(sc, model_path)
+
+
+
+
