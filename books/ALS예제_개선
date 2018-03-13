@@ -4,6 +4,8 @@ Start
 #####################################
 
 #모델링을 위한 일부데이터(2MB)와 전체데이터(700MB) 다운로드
+#small파일과 big파일을 하둡fs에 업로드
+#movies_small.csv, ratings_2MB.csv, movies_csv, ratings_700MB.csv
 #file download
 #complete_dataset_url = 'http://files.grouplens.org/datasets/movielens/ml-latest.zip'
 #small_dataset_url = 'http://files.grouplens.org/datasets/movielens/ml-latest-small.zip'
@@ -41,11 +43,11 @@ small_movies_data.take(3)
 Selecting ALS parameters using the small dataset
 ##########################################################################
 
-#샘플데이터를 6:2:2로 쪼갠 후 두번째 비율 2의 데이터를 가지고 모델검증/비교를 통해 최적의 rank 값 산정
+#샘플데이터를 6:2:2로 분할하여 3개를 만들고
+#뒤에 2개는 사용자와 item만으로 재구성하여 총 5개를 만든다
 training_RDD, validation_RDD, test_RDD = small_ratings_data.randomSplit([6, 2, 2], seed=0L)
 validation_for_predict_RDD = validation_RDD.map(lambda x: (x[0], x[1]))
 test_for_predict_RDD = test_RDD.map(lambda x: (x[0], x[1]))
-
 
 from pyspark.mllib.recommendation import ALS
 import math
@@ -75,7 +77,6 @@ for rank in ranks:
         min_error = error
         best_rank = rank
 
-
 #RMSE
 min_error
 
@@ -88,7 +89,7 @@ rates_and_preds.take(3)
 
 
 
-#최적의 rank를 마지막 2비율 데이터에 적용 후 RMSE 계산해 봄
+#best rank로 model 만든 후 마지막 test 데이터에도 적용하여 RMSE 계산해 봄
 #Finally we test the selected model.
 
 model = ALS.train(training_RDD, best_rank, seed=seed, iterations=iterations,
@@ -147,6 +148,18 @@ print 'For testing data the RMSE is %s' % (error)
 ##########################################################################
 How to make recommendations (후반부 refer 용)
 ##########################################################################
+
+#영화ID만으로는 가독성이 떨어지므로 영화제목, 영화별 평가된 총 건수 등의 
+#부가정보를 추가하여 보여주는 과정을 설명한다
+
+#SPARK 내부에서 처리할지 외부에서 처리할지 고민사항
+#영화별 추천 받은 건수와 같은 통계는 SPARK에서 처리하는 것이 권장될 것 같고
+#영화제목을 매핑하여 보여주는 것은 외부에서 처리해도 될 것 같음
+
+
+
+
+
 
 ##########
 #PART1. APP에서 itemID로부터 영화제목과 통계정보 추출하기 위한 예제
