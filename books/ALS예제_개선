@@ -263,42 +263,48 @@ print "New model trained in %s seconds" % round(tt,3)
 Getting top recommendations
 ##########################################################################
 
-#신규유저는 전체 9000여건의 영화 중에 10개를 rank했다.
-#이 10의 rank 데이터를 가지고 나머지 9000여건의 영화 중 추천해봄
+#신규유저ID는 0
+#신규유저는 전체 9125 건의 영화 중에서 10개의 영화를 평가했다
+#이 평가 데이터에 근거하여 평가하지 않은 영화 9115건을 우선순위로 추천
 
 
-#앞서 정의했던 userID/ItemID/Rank를 갖는 10개의 배열에서 ItemID 열만 가져다가 new_user_ratings_ids에 넣는다
+#신규유저가 평가한 영화목록을 추출(영화 10개)
 # get just movie IDs
 new_user_ratings_ids = map(lambda x: x[1], new_user_ratings)
 
-#영화목록 complete_movies_data에서 위 신규유저가 본 영화가 아닌 것들만 뽑아서 new_user_unrated_movies_RDD 재구성
-#즉, 신규유저가 평가하지 않은 영화만으로 RDD구성 (0, 영화ID)
+#전체영화목록(9125)에서 위 목록을 빼서 신규유저가 평가하지 않은 영화목록(9115)을 만든 후
+#분석하기 위한 형태의 배열로 조합 [(0, 2), (0, 3), (0, 12),,,,,
 # keep just those not on the ID list (thanks Lei Li for spotting the error!)
 new_user_unrated_movies_RDD = (complete_movies_data.filter(lambda x: x[0] not in new_user_ratings_ids).map(lambda x: (new_user_ID, x[0])))
 
-#원본전체 데이터 + 신규유저 "0"의 10건 데이터로 부터 만든 "new_ratings_model" model에 신규유저가 보지 않은 영화를 대입
-#영화 총 건수 9225 개중 10개를 보았으니 9215건에 대해서 예측하는 것임
+#앞서 만들어둔 model에 위 데이터 적용
 # Use the input RDD, new_user_unrated_movies_RDD, with new_ratings_model.predictAll() to predict new ratings for the movies
 new_user_recommendations_RDD = new_ratings_model.predictAll(new_user_unrated_movies_RDD)
 
+#그럼 영화 별로 예상 평가 계산됨
+[Rating(user=0, product=6400, rating=3.330745), Rating(user=0, product=320, rating=3.120745),,,,
 
+#아래는 이 결과로 부터 가독성을 높이기 위해 영화제목 등을 매핑한다
+#앞서 영화제목 그리고 영화 별로 총 평가받은 횟수 데이터를 활용한다
 
-
-
+#신규유저의 예측 데이터를 사용자ID제거하여 영화ID와 RANK만 남김
 # Transform new_user_recommendations_RDD into pairs of the form (Movie ID, Predicted Rating)
 new_user_recommendations_rating_RDD = new_user_recommendations_RDD.map(lambda x: (x.product, x.rating))
+
+#여기에 RDD 2개(영화제목,  영화별평가된총건수)를 조인한다
 new_user_recommendations_rating_title_and_count_RDD = \
     new_user_recommendations_rating_RDD.join(complete_movies_titles).join(movie_rating_counts_RDD)
+    
 new_user_recommendations_rating_title_and_count_RDD.take(3)
 
-
+#조인된 행렬로 부터 영화제목, 평가, 평가총건수 만 추출
 #So we need to flat this down a bit in order to have (Title, Rating, Ratings Count).
 
 new_user_recommendations_rating_title_and_count_RDD = \
     new_user_recommendations_rating_title_and_count_RDD.map(lambda r: (r[1][0][1], r[1][0][0], r[1][1]))
 
 
-#영화제목, 예측평점, 이 영화에 매겨진 평가 건수 리턴
+#25건 이상 평가받은 영화 중에 평가를 내림차순으로 정렬 => 신규유저(id 0)에 대한 추천목록임
 #Finally, get the highest rated recommendations for the new user, filtering out movies with less than 25 ratings.
 
 top_movies = new_user_recommendations_rating_title_and_count_RDD.filter(lambda r: r[2]>=25).takeOrdered(25, key=lambda x: -x[1])
@@ -307,13 +313,12 @@ print ('TOP recommended movies (with more than 25 reviews):\n%s' %
         '\n'.join(map(str, top_movies)))
 
 
-
-
 ##########################################################################
 Getting individual ratings
 ##########################################################################
 
-my_movie = sc.parallelize([(0, 500)]) # Quiz Show (1994)
+# Quiz Show (1994)
+my_movie = sc.parallelize([(0, 500)])
 individual_movie_rating_RDD = new_ratings_model.predictAll(new_user_unrated_movies_RDD)
 individual_movie_rating_RDD.take(1)
 
