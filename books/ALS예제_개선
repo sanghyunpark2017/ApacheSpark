@@ -170,7 +170,8 @@ How to make recommendations (후반부 refer 용)
 
 
 #영화ID/영화제목/영화장르를 가지고 있는 movies 데이터를 가져온다
-complete_movies_raw_data = sc.textFile("/movies_small.csv")
+#complete_movies_raw_data = sc.textFile("/movies_small.csv")
+complete_movies_raw_data = sc.textFile("/movies.csv")
 complete_movies_raw_data_header = complete_movies_raw_data.take(1)[0]
 
 
@@ -188,19 +189,19 @@ print "There are %s movies in the complete dataset" % (complete_movies_titles.co
 
 
 ##########
-#PART2. UserDefined Function(함수사용 사례)
+#PART2. UserDefined Function
 ##########
 
 
 #영화별로 평점의 총 건수와 평점평균을 리턴하는 함수를 만든 후 평가르 매겨진 영화들에 대한 집계를 한다.
 
-#사용자 함수정의
+#사용자 함수정의(영화통계)
 def get_counts_and_averages(ID_and_ratings_tuple):
     nratings = len(ID_and_ratings_tuple[1])
     return ID_and_ratings_tuple[0], (nratings, float(sum(x for x in ID_and_ratings_tuple[1]))/nratings)
 
 
-#영화ID와 RANK 2개의 데이터만 가지고 영화ID에 대한 groupByKey를 호출하여 
+#영화ID와 RANK 2개의 원본에서 통계
 #집계(건수,평균,최소,최대)를 계산하여 결과를 movie_ID_with_ratings_RDD에 넣는다.
 #예) (28878, <pyspark.resultiterable.... object at 0x...>) -> 집계(건수, 평균, 최소, 최대)는 object 형태로 들어감
 movie_ID_with_ratings_RDD = (complete_ratings_data.map(lambda x: (x[1], x[2])).groupByKey())
