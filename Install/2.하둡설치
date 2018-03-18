@@ -297,6 +297,10 @@ chmod +x /home/user/hdstop.sh
 
 /home/user/hdstartup.sh
 
+#파일업당누로드안될때
+#/home/user/hdstartup.sh
+
+
 ##############################################################
 Step04.standby namenode 와 resourcemgmt 실행(hadoop2)
 ##############################################################
