@@ -5,44 +5,44 @@
 #다운로드 및 압축풀기
 su - user
 cd ~
-wget http://10.10.63.63:8089/spark-2.2.1-bin-hadoop2.7.tgz
-tar zxvf spark-2.2.1-bin-hadoop2.7.tgz
+wget http://10.10.63.63:8089/spark-2.3.0-bin-hadoop2.7.tgz
+tar zxvf spark-2.3.0-bin-hadoop2.7.tgz
 
 #본격 설치에 앞서 클러스터모드에서사용될 spark바이너리파일을하둡에 넣어둔다(1회 작업)
 cd /home/user
-hadoop fs -put spark-2.2.1-bin-hadoop2.7.tgz  /
+hadoop fs -put spark-2.3.0-bin-hadoop2.7.tgz  /
 
-cd /home/user/spark-2.2.1-bin-hadoop2.7
+cd /home/user/spark-2.3.0-bin-hadoop2.7
 hadoop fs -put README.md  /
 
 hadoop fs -ls /
 
 #환경설정파일을 템플릿파일로 부터 복사하여 만든다
-cd /home/user/spark-2.2.1-bin-hadoop2.7/conf/
+cd /home/user/spark-2.3.0-bin-hadoop2.7/conf/
 cp  spark-env.sh.template  spark-env.sh
 cp  spark-defaults.conf.template  spark-defaults.conf
 
 #spark-env.sh 환경변수 작성
-vi /home/user/spark-2.2.1-bin-hadoop2.7/conf/spark-env.sh
+vi /home/user/spark-2.3.0-bin-hadoop2.7/conf/spark-env.sh
 -----------------------------------------------------------------------------------------------
-export SPARK_HOME=/home/user/spark-2.2.1-bin-hadoop2.7
+export SPARK_HOME=/home/user/spark-2.3.0-bin-hadoop2.7
 export MESOS_NATIVE_JAVA_LIBRARY=/usr/local/lib/libmesos.so
-export SPARK_EXECUTOR_URI=hdfs://mycluster/spark-2.2.1-bin-hadoop2.7.tgz
+export SPARK_EXECUTOR_URI=hdfs://mycluster/spark-2.3.0-bin-hadoop2.7.tgz
 -----------------------------------------------------------------------------------------------
 
 #default 파일에는 구동에 필요한 정보를 넣는다
 su - user
-vi /home/user/spark-2.2.1-bin-hadoop2.7/conf/spark-defaults.conf
+vi /home/user/spark-2.3.0-bin-hadoop2.7/conf/spark-defaults.conf
 -----------------------------------------------------------------------------------------------
 spark.master=mesos://zk://zk1:2181,zk2:2181,zk3:2181/mesos
-spark.executor.uri=hdfs://mycluster/spark-2.2.1-bin-hadoop2.7.tgz
+spark.executor.uri=hdfs://mycluster/spark-2.3.0-bin-hadoop2.7.tgz
 spark.deploy.recoveryMode=ZOOKEEPER
 spark.deploy.zookeeper.url=zk1:2181,zk2:2181,zk3:2181
 spark.deploy.zookeeper.dir=/spark
 -----------------------------------------------------------------------------------------------
 
 #slave파일작성
-cat << EOF > /home/user/spark-2.2.1-bin-hadoop2.7/conf/slaves
+cat << EOF > /home/user/spark-2.3.0-bin-hadoop2.7/conf/slaves
 spark1
 spark2
 spark3
@@ -55,14 +55,14 @@ spark9
 spark10
 EOF
 clear
-cat /home/user/spark-2.2.1-bin-hadoop2.7/conf/slaves
+cat /home/user/spark-2.3.0-bin-hadoop2.7/conf/slaves
 
 
 
 #테스트
 
 #1.독립실행모드(any spark)
-/home/user/spark-2.2.1-bin-hadoop2.7/bin/spark-shell
+/home/user/spark-2.3.0-bin-hadoop2.7/bin/spark-shell
 val textFile=sc.textFile("/README.md")
 textFile.count()
 textFile.first()
@@ -73,20 +73,20 @@ textFile.map(line => line.split(" ").size).reduce((a, b) => Math.max(a, b))
 
 #2.클러스터모드(mesos1, mesos2, mesos3)
 su - user
-/home/user/spark-2.2.1-bin-hadoop2.7/sbin/start-mesos-dispatcher.sh -m mesos://zk://zk1:2181,zk2:2181,zk3:2181/mesos 
+/home/user/spark-2.3.0-bin-hadoop2.7/sbin/start-mesos-dispatcher.sh -m mesos://zk://zk1:2181,zk2:2181,zk3:2181/mesos 
 
 #any sparks
 1 
 su - user
-/home/user/spark-2.2.1-bin-hadoop2.7/bin/spark-submit \
+/home/user/spark-2.3.0-bin-hadoop2.7/bin/spark-submit \
 --class org.apache.spark.examples.SparkPi \
 --master mesos://mesos1:7077 \
 --deploy-mode cluster \
---supervise /home/user/spark-2.2.1-bin-hadoop2.7/examples/jars/spark-examples_2.11-2.2.1.jar 
+--supervise /home/user/spark-2.3.0-bin-hadoop2.7/examples/jars/spark-examples_2.11-2.2.1.jar 
 
 2 
 su - user
-cd /home/user/spark-2.2.1-bin-hadoop2.7
+cd /home/user/spark-2.3.0-bin-hadoop2.7
 ./bin/spark-submit \
 --master mesos://mesos1:7077 \
 --deploy-mode cluster \
@@ -105,7 +105,7 @@ client mode는 mesos://zk://zk1:2181,zk2:2181,zk3:2181/mesos로 사용하면 되
 => 클러스터 모드는 spark-submit을 통해서만 가능한듯하다
 
 클라이언트 구동 예시
-/home/user/spark-2.2.1-bin-hadoop2.7/bin/spark-shell --master mesos://zk://zk1:2181,zk2:2181,zk3:2181/mesos
+/home/user/spark-2.3.0-bin-hadoop2.7/bin/spark-shell --master mesos://zk://zk1:2181,zk2:2181,zk3:2181/mesos
 
 
 
@@ -115,7 +115,6 @@ spark.serializer=org.apache.spark.serializer.KryoSerializer
 
 
 끝~
-
 
 
 
