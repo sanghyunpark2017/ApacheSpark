@@ -2,21 +2,15 @@
 #./pyspark --master spark://host:port
 #./pyspark --master mesos://host:port
 #./pyspark --master mesos://zk://zk1:2181,zk3:2181,zk3:2181/mesos
-./pyspark --executor-memory 5G
 
 /home/user/spark-2.3.0-bin-hadoop2.7/bin/pyspark --executor-memory 2G --total-executor-cores 40
-
-
-#Get the data here http://grouplens.org/datasets/movielens/
-#movielens = sc.textFile("../in/ml-100k/u.data")
+/home/user/spark-2.3.0-bin-hadoop2.7/bin/pyspark --executor-memory 5G
 
 movielens = sc.textFile("/u.data")
 
-#u'196\t242\t3\t881250949'
+type(movielens)
 movielens.first()
 movielens.count()
-
-
 
 #Clean up the data by splitting it
 #Movielens readme says the data is split by tabs and
@@ -49,19 +43,16 @@ clean_data.map(lambda y: int(y[1])).distinct().count()
 
 
 #Need to import three functions / objects from the MLlib
-from pyspark.mllib.recommendation\
-    import ALS,MatrixFactorizationModel, Rating
+from pyspark.mllib.recommendation import ALS,MatrixFactorizationModel, Rating
 
 #We'll need to map the movielens data to a Ratings object 
 #A Ratings object is made up of (user, item, rating)
 mls = movielens.map(lambda l: l.split('\t'))
-ratings = mls.map(lambda x: Rating(int(x[0]),\
-    int(x[1]), float(x[2])))
+ratings = mls.map(lambda x: Rating(int(x[0]), int(x[1]), float(x[2])))
 
 #Need a training and test set
 train, test = ratings.randomSplit([0.7,0.3],7856)
 
-#70,005  /  29,995
 train.count()
 test.count() 
 
@@ -81,14 +72,8 @@ model = ALS.train(train, rank, numIterations)
 #Examine the latent features for one product
 model.productFeatures().first()
 
-#(12, array('d', [-0.29417645931243896, 1.8341970443725586, 
-    #-0.4908868968486786, 0.807500958442688, -0.8945541977882385]))
-
 #Examine the latent features for one user
 model.userFeatures().first()
-
-#(12, array('d', [1.1348751783370972, 2.397622585296631,
-    #-0.9957215785980225, 1.062819480895996, 0.4373367130756378]))
 
 # For Product X, Find N Users to Sell To (Product, Users)
 model.recommendUsers(242,100)
@@ -98,8 +83,6 @@ model.recommendProducts(196,10)
 
 #Predict Single Product for Single User (User, Product)
 model.predict(196, 242)
-
-
 
 
 # Predict Multi Users and Multi Products
