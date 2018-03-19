@@ -23,8 +23,8 @@ mv zeppelin-0.7.3-bin-all zeppelin
 cd  /home/user/zeppelin/conf
 
 #리슨포트 재지정
-cp  /home/user/zeppelin/conf/zeppelin-site.xml.template /home/user/zeppelin/conf/zeppelin-site.xml
-vi /home/user/zeppelin/conf/zeppelin-site.xml
+cp  zeppelin-site.xml.template  zeppelin-site.xml
+vi  zeppelin-site.xml
 -------------------------------------------------------
 <property>
   <name>zeppelin.server.port</name>
@@ -34,24 +34,31 @@ vi /home/user/zeppelin/conf/zeppelin-site.xml
 -------------------------------------------------------
 
 #환경변수설정
-cp /home/user/zeppelin/conf/zeppelin-env.sh.template  /home/user/zeppelin/conf/zeppelin-env.sh
-vi /home/user/zeppelin/conf/zeppelin-env.sh
+cp zeppelin-env.sh.template  zeppelin-env.sh
+vi zeppelin-env.sh
 --------------------------------------------------------------------------------------
 export JAVA_HOME=/opt/jdk1.8.0_131
-export SPARK_HOME=/home/user/spark-2.2.1-bin-hadoop2.7
+export SPARK_HOME=/home/user/spark-2.3.0-bin-hadoop2.7
 export MESOS_NATIVE_JAVA_LIBRARY=/usr/local/lib/libmesos.so
-export SPARK_EXECUTOR_URI=hdfs://mycluster/spark-2.2.1-bin-hadoop2.7.tgz
+export SPARK_EXECUTOR_URI=hdfs://mycluster/spark-2.3.0-bin-hadoop2.7.tgz
 export ZEPPELIN_JAVA_OPTS="-Dspark.executor.uri=$SPARK_EXECUTOR_URI"
-
-export SPARK_HOME=/home/user/spark-2.2.1-bin-hadoop2.7
+export SPARK_HOME=/home/user/spark-2.3.0-bin-hadoop2.7
 export PYSPARK_PYTHON=/usr/local/bin/python2
 export PYTHONPATH=${SPARK_HOME}/python:${SPARK_HOME}/python/lib/py4j-0.10.4-src.zip:${PYTHONPATH}
 export SPARK_YARN_USER_ENV="PYTHONPATH=${PYTHONPATH}"
 --------------------------------------------------------------------------------------
 
 #서비스기동
-/home/user/zeppelin/bin/zeppelin-daemon.sh start
-/home/user/zeppelin/bin//zeppelin-daemon.sh stop
+cd  /home/user/zeppelin/bin
+
+./zeppelin-daemon.sh start
+./zeppelin-daemon.sh stop
+./zeppelin-daemon.sh start
+
+!!!!오류
+처음 한번은 root계정으로 실행됨 -> 503오류 발생함
+root에서 kill 후에 user계정에서 다시 기동함
+
 
 
 #URL접속
