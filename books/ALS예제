@@ -4,6 +4,7 @@
 #./pyspark --master mesos://zk://zk1:2181,zk3:2181,zk3:2181/mesos
 ./pyspark --executor-memory 5G
 
+./pyspark --executor-memory 2G --total-executor-cores 40
 
 
 #Get the data here http://grouplens.org/datasets/movielens/
