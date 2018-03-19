@@ -46,9 +46,13 @@ model.itemFactors.take(2)
 
 
 
-model.setColdStartStrategy("drop")
-
+model.setColdStartStrategy("nan")
 val predictions = model.transform(test)
+predictions.count()
+
+model.setColdStartStrategy("drop")
+val predictions = model.transform(test)
+predictions.count()
 
 
 
