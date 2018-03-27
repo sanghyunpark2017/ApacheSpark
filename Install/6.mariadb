@@ -48,6 +48,31 @@ select * from test;
 
 drop table test;
 
+======================================================================================
+#csv to mariadb
+
+#remove index
+ALTER TABLE dbName.tableName DISABLE KEYS; LOAD DATA local INFILE "filePath" INTO TABLE dbName.tableName FIELDS TERMINATED BY ","; ALTER TABLE dbName.tableName ENABLE KEYS;
+
+#import(구조가 같을 때)
+LOAD DATA LOCAL INFILE "filePath" INTO TABLE dbName.tableName FIELDS TERMINATED BY ",";
+
+#import(구조가 다를 때)
+LOAD DATA LOCAL INFILE 'file_name' INTO TABLE table_name FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' (column1,column2,column3, ...);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
