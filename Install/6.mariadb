@@ -61,6 +61,26 @@ LOAD DATA LOCAL INFILE "filePath" INTO TABLE dbName.tableName FIELDS TERMINATED 
 LOAD DATA LOCAL INFILE 'file_name' INTO TABLE table_name FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' (column1,column2,column3, ...);
 
 
+#####################################
+mariadb jdbc download
+#####################################
+
+https://downloads.mariadb.org/connector-java/
+
+ex) 
+wget https://downloads.mariadb.com/Connectors/java/connector-java-2.2.3/mariadb-java-client-2.2.3.jar
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
