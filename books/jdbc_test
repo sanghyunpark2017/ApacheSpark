@@ -1,9 +1,17 @@
 
 
-
+#csv
 df = spark.read.load("examples/src/main/resources/people.csv",
                      format="csv", sep=":", inferSchema="true", header="true")
                      
+
+#jdbc
+bin/spark-shell --driver-class-path postgresql-9.4.1207.jar --jars postgresql-9.4.1207.jar
+
+
+
+
+
 
 
 
