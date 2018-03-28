@@ -1,44 +1,97 @@
 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-#csv
-df = spark.read.load("examples/src/main/resources/people.csv",
-                     format="csv", sep=":", inferSchema="true", header="true")
+vi /etc/yum.repos.d/MariaDB.repo
+-------------------------------------------------------------------------------
+[mariadb]
+name = MariaDB
+baseurl = http://yum.mariadb.org/10.1/centos7-amd64
+gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
+gpgcheck=1
+-------------------------------------------------------------------------------
+
+yum install -y MariaDB-server
+
+rpm -qa | grep MariaDB
+
+systemctl start mariadb
+
+netstat -anp | grep 3306
+
+chkconfig --list mysql
+
+/usr/bin/mysqladmin -u root password 'P@ssw0rd'
+
+mysql -u root -p
+
+
+======================================================================================
+
+show databases;
+
+create user 'recomm_user'@'localhost' identified by '1234';
+select host, user from mysql.user;
+
+create database recomm;
+
+grant all privileges on recomm.* to 'recomm_user'@'localhost';
+
+#외부접속허용
+grant all privileges on recomm.* to recomm_user@'%' identified by '1234' with grant option;
+
+grant all privileges on recomm.* to 'recomm_user'@'10.10.64.88';
+
+flush privileges;
+
+
+use recomm;
+
+
+Create table test (
+a varchar(20) not null,
+b varchar(20) not null,
+c varchar(20)
+) default character set utf8 collate utf8_general_ci ;
+
+show databases;
+show tables;
+
+select * from test;
+
+#drop table test;
 
 #####################################
-mariadb jdbc download
+JDBC드라이버다운로드
 #####################################
 
-https://downloads.mariadb.org/connector-java/
+# https://downloads.mariadb.org/connector-java/
 
-ex) 
+su - user
 wget https://downloads.mariadb.com/Connectors/java/connector-java-2.2.3/mariadb-java-client-2.2.3.jar
 
-/home/user
 
-#
-./pyspark  --driver-class-path /home/user/mariadb-java-client-2.2.3.jar --jars /home/user/mariadb-java-client-2.2.3.jar
+######################################
+scala쉘에서 mariadb접속
+######################################
 
+/home/user/spark-2.3.0-bin-hadoop2.7/bin/spark-shell   --driver-class-path /home/user/mariadb-java-client-2.2.3.jar --jars /home/user/mariadb-java-client-2.2.3.jar
 
+import org.apache.spark.sql.SQLContext
 
-from pyspark.sql import SparkSession
+val sqlcontext = new org.apache.spark.sql.SQLContext(sc)
 
-spark = SparkSession.builder.appName("sparkanalysis").config("spark.driver.extraClassPath","/home/user/mariadb-java-client-2.2.3.jar").getOrCreate()
-
-//for localhost database//
-
-pgDF = spark.read \
-.format("jdbc") \
-.option("url", "jdbc:postgresql:postgres") \
-.option("dbtable", "public.user_emp_tab") \
-.option("user", "root") \
-.option("password", "P@ssw0rd") \
-.load()
+val dataframe_mysql = sqlcontext.read.format("jdbc").option("url", "jdbc:mysql://10.10.64.88:3306/recomm").option("driver", "org.mariadb.jdbc.Driver").option("dbtable", "test").option("user", "recomm_user").option("password", "1234").load()
 
 
-print(pgDF)
 
-pgDF.filter(pgDF["user_id"]>5).show()
+
+
+
+
+
 
 
 
