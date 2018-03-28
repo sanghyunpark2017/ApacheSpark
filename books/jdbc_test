@@ -86,6 +86,25 @@ val sqlcontext = new org.apache.spark.sql.SQLContext(sc)
 val dataframe_mysql = sqlcontext.read.format("jdbc").option("url", "jdbc:mysql://10.10.64.88:3306/recomm").option("driver", "org.mariadb.jdbc.Driver").option("dbtable", "test").option("user", "recomm_user").option("password", "1234").load()
 
 
+dataframe_mysql.show()
+
+######################################
+pyspark쉘에서 mariadb접속
+######################################
+
+/home/user/spark-2.3.0-bin-hadoop2.7/bin/pyspark   --driver-class-path /home/user/mariadb-java-client-2.2.3.jar --jars /home/user/mariadb-java-client-2.2.3.jar
+
+
+/home/user/spark-2.3.0-bin-hadoop2.7/bin/pyspark  --driver-class-path /home/user/mariadb-java-client-2.2.3.jar --jars /home/user/mariadb-java-client-2.2.3.jar
+
+sc = spark.sparkContext
+
+from pyspark.sql import SQLContext
+
+sqlcontext = SQLContext(sc)
+
+dataframe_mysql = sqlcontext.read.format("jdbc").option("url", "jdbc:mysql://10.10.64.88:3306/recomm").option("driver", "org.mariadb.jdbc.Driver").option("dbtable", "test").option("user", "root").option("password", "P@ssw0rd").load()
+
 
 
 
