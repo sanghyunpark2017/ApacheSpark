@@ -27,6 +27,10 @@ chkconfig --list mysql
 
 mysql -u root -p
 
+#mysqladmin -u root -p shutdown
+
+
+
 
 ======================================================================================
 
@@ -68,6 +72,63 @@ show tables;
 select * from test;
 
 #drop table test;
+
+######################################
+import to mariadb
+######################################
+
+use recomm;
+
+drop table ratings_2mb;
+create table ratings_2mb (
+userId int,
+movieId int,
+rating int,
+timestamp datetime);
+
+LOAD DATA LOCAL INFILE "/root/ratings_2MB.csv"
+INTO TABLE ratings_2mb
+FIELDS TERMINATED BY ','
+ENCLOSED BY '\"'
+LINES TERMINATED BY '\n';
+
+ALTER TABLE ratings_2mb ADD INDEX idx1 (userId);
+ALTER TABLE ratings_2mb ADD INDEX idx2 (movieId);
+SHOW INDEX FROM ratings_2mb;
+
+select count(*) from ratings_2mb;
+SHOW INDEX FROM ratings_2mb;
+
+----------------------------------------------------------------------------------------
+
+drop table ratings_700mb;
+create table ratings_700mb (
+userId int,
+movieId int,
+rating int,
+timestamp datetime);
+
+LOAD DATA LOCAL INFILE "/root/ratings_700MB.csv"
+INTO TABLE ratings_700mb
+FIELDS TERMINATED BY ','
+ENCLOSED BY '\"'
+LINES TERMINATED BY '\n';
+
+ALTER TABLE ratings_700mb ADD INDEX idx1 (userId);
+ALTER TABLE ratings_700mb ADD INDEX idx2 (movieId);
+SHOW INDEX FROM ratings_700mb;
+
+select count(*) from ratings_700mb;
+
+----------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
 
 #####################################
 JDBC드라이버다운로드
