@@ -8,6 +8,10 @@ cd ~
 wget http://10.10.63.63:8089/spark-2.3.0-bin-hadoop2.7.tgz
 tar zxvf spark-2.3.0-bin-hadoop2.7.tgz
 
+#numpy 설치
+yum install -y numpy
+ 
+
 #본격 설치에 앞서 클러스터모드에서사용될 spark바이너리파일을하둡에 넣어둔다(1회 작업)
 cd /home/user
 hadoop fs -put spark-2.3.0-bin-hadoop2.7.tgz  /
