@@ -1,0 +1,43 @@
+
+https://zeppelin.apache.org/docs/0.8.0-SNAPSHOT/setup/deployment/flink_and_spark_cluster.html
+
+
+
+#Ubuntu 14.X 
+sudo passwd root
+
+sudo apt-get install git
+sudo apt-get install openssh-server
+
+#OpenJDK 7
+sudo apt-get install openjdk-7-jdk openjdk-7-jre-lib
+
+#Maven 3.1+
+sudo apt-get purge maven maven2
+wget "http://www.us.apache.org/dist/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz"
+tar -zxvf apache-maven-3.3.9-bin.tar.gz
+sudo mv ./apache-maven-3.3.9 /usr/local
+sudo ln -s /usr/local/apache-maven-3.3.9/bin/mvn /usr/bin/mvn
+
+#Installing Zeppelin
+git clone https://github.com/apache/zeppelin.git
+cd zeppelin
+mvn clean package -Pspark-2.3 -Pr -Pscala-2.11 -Pbuild-distr -DskipTests
+
+
+
+mvn clean package -Pspark-2.3 -Pr -Pscala-2.10 -Pbuild-distr -DskipTests
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
