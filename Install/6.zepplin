@@ -22,11 +22,12 @@ sudo ln -s /usr/local/apache-maven-3.3.9/bin/mvn /usr/bin/mvn
 #Installing Zeppelin
 git clone https://github.com/apache/zeppelin.git
 cd zeppelin
+
+./dev/change_scala_version.sh 2.11
 mvn clean package -Pspark-2.3 -Pr -Pscala-2.11 -Pbuild-distr -DskipTests
 
+mvn clean package -DskipTests -Pspark-2.3 -Phadoop-2.4 -Pr -Pscala-2.11
 
-
-mvn clean package -Pspark-2.3 -Pr -Pscala-2.10 -Pbuild-distr -DskipTests
 
 
 
