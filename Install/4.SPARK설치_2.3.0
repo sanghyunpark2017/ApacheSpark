@@ -10,26 +10,31 @@ tar zxvf spark-2.3.0-bin-hadoop2.7.tgz
 
 ################ 파이썬 설치 ############################
 #python 설치
-yum install gcc python-devel
+yum install -y gcc python-devel
 python -V
 
 #pip설치
 curl https://bootstrap.pypa.io/get-pip.py | python
 
-#numpy설치
-yum install numpy
+#mesos 1.5.0 인터페이스 설치
+pip install mesos.interface
+
+#pip설치
+curl https://bootstrap.pypa.io/get-pip.py | python
 
 #pip install로 numpy 업그레이드
 pip install --upgrade numpy
+
+#scipy 설치하기
+yum install -y scipy
+
+
+
 
 #numpy 설치확인
 python
 import numpy
 print numpy.__version__
-
-
-#scipy 설치하기
-yum install scipy
 
 #scipy 설치확인
 python
