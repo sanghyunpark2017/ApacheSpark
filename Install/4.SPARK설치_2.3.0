@@ -8,9 +8,43 @@ cd ~
 wget http://10.10.63.63:8089/spark-2.3.0-bin-hadoop2.7.tgz
 tar zxvf spark-2.3.0-bin-hadoop2.7.tgz
 
-#numpy 설치
-yum install -y numpy
+################ 파이썬 설치 ############################
+#python 설치
+yum install gcc python-devel
+python -V
+
+#pip설치
+curl https://bootstrap.pypa.io/get-pip.py | python
+
+#numpy설치
+yum install numpy
+
+#pip install로 numpy 업그레이드
+pip install --upgrade numpy
+
+#numpy 설치확인
+python
+import numpy
+print numpy.__version__
+
+
+#scipy 설치하기
+yum install scipy
+
+#scipy 설치확인
+python
+import scipy
+print scipy.__version__
+
+
+
+#####################################################################
+
+
  
+ 
+ 
+
 
 #본격 설치에 앞서 클러스터모드에서사용될 spark바이너리파일을하둡에 넣어둔다(1회 작업)
 cd /home/user
